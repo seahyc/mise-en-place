@@ -268,9 +268,8 @@ Copy `.env.example` to `.env` in the `prototype/` folder and fill in:
 ```bash
 cd prototype
 flutter pub get
-flutter run -d "iPad Pro"  # or your device
 
-# For web development with live logs:
+# Run on web with live logs:
 FLUTTER_WEB_PORT=50000 FLUTTER_WEB_HOST=0.0.0.0 \
   fvm flutter run -d chrome --web-port=50000 \
   2>&1 | tee /tmp/prototype-web.log
