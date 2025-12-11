@@ -6,7 +6,6 @@ import '../models/recipe.dart';
 import '../controllers/cooking_mode_controller.dart';
 import '../services/auth_service.dart';
 import '../widgets/cooking_mode_widgets.dart';
-import '../widgets/debug_tools_sidebar.dart';
 import '../widgets/soundwave_visualizer.dart';
 import '../widgets/cooking_timers_overlay.dart';
 import '../utils/web_url_sync.dart';
@@ -352,19 +351,99 @@ class _CookingModeScreenState extends State<CookingModeScreen> with TickerProvid
             ),
 
           // Debug sidebar
+          // Discrete debug panel - bottom right, translucent
           if (_controller.showDebugSidebar)
             Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: DebugToolsSidebar(
-                tools: const {}, // Tools are managed by the controller
-                logEntries: _controller.debugLogs,
-                connectionStatus: _controller.isConnected ? 'connected' : (_controller.isConnecting ? 'connecting' : 'disconnected'),
-                agentSpeaking: _controller.agentIsSpeaking,
-                userSpeaking: _controller.userIsSpeaking,
-                vadScore: _controller.userVadScore,
-                onClose: _controller.toggleDebugSidebar,
+              right: 16,
+              bottom: 120,
+              child: Container(
+                width: 320,
+                constraints: const BoxConstraints(maxHeight: 280),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header with close button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _controller.isConnected ? Colors.green : Colors.orange,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _controller.isConnected ? 'Connected' : (_controller.isConnecting ? 'Connecting...' : 'Disconnected'),
+                            style: GoogleFonts.jetBrainsMono(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (_controller.agentIsSpeaking)
+                            Text('🗣️ ', style: const TextStyle(fontSize: 12)),
+                          if (_controller.userIsSpeaking)
+                            Text('🎤 ', style: const TextStyle(fontSize: 12)),
+                          GestureDetector(
+                            onTap: _controller.toggleDebugSidebar,
+                            child: const Icon(Icons.close, color: Colors.white54, size: 18),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Colors.white12),
+                    // Log entries
+                    Flexible(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        shrinkWrap: true,
+                        reverse: true,
+                        itemCount: _controller.debugLogs.length,
+                        itemBuilder: (context, index) {
+                          final log = _controller.debugLogs[_controller.debugLogs.length - 1 - index];
+                          Color typeColor;
+                          switch (log.type) {
+                            case 'agent':
+                              typeColor = const Color(0xFFFFB74D);
+                              break;
+                            case 'user':
+                              typeColor = const Color(0xFF64B5F6);
+                              break;
+                            case 'tool':
+                              typeColor = const Color(0xFF81C784);
+                              break;
+                            case 'error':
+                              typeColor = Colors.red;
+                              break;
+                            default:
+                              typeColor = Colors.white54;
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              '${log.type}: ${log.message.length > 60 ? '${log.message.substring(0, 60)}...' : log.message}',
+                              style: GoogleFonts.jetBrainsMono(
+                                color: typeColor,
+                                fontSize: 10,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
