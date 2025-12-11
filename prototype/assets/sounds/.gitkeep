@@ -1,0 +1,3 @@
+# Timer alert sound placeholder
+# Add timer_complete.mp3 here for timer completion alerts
+# The app will still work without it - the voice agent will announce timer completion

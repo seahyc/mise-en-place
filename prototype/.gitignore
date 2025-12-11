@@ -1,0 +1,21 @@
+.env
+build/
+.dart_tool/
+.packages
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# FVM Version Cache
+.fvm/
+
+# IDE / workspace
+.idea/
+*.iml
+.metadata
+
+# Local tooling
+.claude/
+test_results.log
+.DS_Store
+.env

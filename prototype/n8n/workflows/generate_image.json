@@ -1,0 +1,339 @@
+{
+  "name": "Generate Image",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "prompt",
+              "type": "string"
+            },
+            {
+              "name": "filename",
+              "type": "string"
+            },
+            {
+              "name": "options",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-image",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000009",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "generate-image"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize input from webhook body\nconst body = $input.first().json.body || $input.first().json;\n\nreturn [{\n  json: {\n    prompt: body.prompt,\n    filename: body.filename || `image_${Date.now()}.png`,\n    options: body.options || {}\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000010",
+      "name": "Normalize Webhook Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"{{ $json.options?.model || 'dall-e-3' }}\",\n  \"prompt\": {{ JSON.stringify($json.prompt) }},\n  \"size\": \"{{ $json.options?.size || '1024x1024' }}\",\n  \"quality\": \"{{ $json.options?.quality || 'standard' }}\",\n  \"style\": \"{{ $json.options?.style || 'natural' }}\",\n  \"response_format\": \"b64_json\",\n  \"n\": 1\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000002",
+      "name": "OpenAI Generate Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\n// Manual AWS SigV4 implementation\nfunction hmacSha256(key, data) {\n  return crypto.createHmac('sha256', key).update(data, 'utf8').digest();\n}\n\nfunction sha256(data) {\n  return crypto.createHash('sha256').update(data, 'utf8').digest('hex');\n}\n\nfunction getSignatureKey(secretKey, dateStamp, region, service) {\n  const kDate = hmacSha256('AWS4' + secretKey, dateStamp);\n  const kRegion = hmacSha256(kDate, region);\n  const kService = hmacSha256(kRegion, service);\n  const kSigning = hmacSha256(kService, 'aws4_request');\n  return kSigning;\n}\n\nfunction signRequest(method, host, path, accessKeyId, secretKey, contentHash) {\n  const region = 'auto';\n  const service = 's3';\n  const now = new Date();\n  const amzDate = now.toISOString().replace(/[:-]|\\.\\d{3}/g, '').slice(0, 15) + 'Z';\n  const dateStamp = amzDate.slice(0, 8);\n  \n  // Canonical headers (must be sorted, lowercase)\n  const canonicalHeaders = `content-type:image/png\\nhost:${host}\\nx-amz-content-sha256:${contentHash}\\nx-amz-date:${amzDate}\\n`;\n  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';\n  \n  // Canonical request\n  const canonicalRequest = [\n    method,\n    path,\n    '', // query string (empty)\n    canonicalHeaders,\n    signedHeaders,\n    contentHash\n  ].join('\\n');\n  \n  console.log('Canonical Request:', canonicalRequest);\n  \n  // String to sign\n  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;\n  const stringToSign = [\n    'AWS4-HMAC-SHA256',\n    amzDate,\n    credentialScope,\n    sha256(canonicalRequest)\n  ].join('\\n');\n  \n  console.log('String to Sign:', stringToSign);\n  \n  // Calculate signature\n  const signingKey = getSignatureKey(secretKey, dateStamp, region, service);\n  const signature = crypto.createHmac('sha256', signingKey).update(stringToSign, 'utf8').digest('hex');\n  \n  // Authorization header\n  const authHeader = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;\n  \n  return {\n    Authorization: authHeader,\n    'x-amz-date': amzDate,\n    'x-amz-content-sha256': contentHash,\n    'Content-Type': 'image/png'\n  };\n}\n\nconst input = $input.first().json;\n\nlet triggerData;\ntry {\n  triggerData = $('Execute Workflow Trigger').first().json;\n} catch (e) {\n  try {\n    triggerData = $('Normalize Webhook Input').first().json;\n  } catch (e2) {\n    triggerData = {};\n  }\n}\n\nconst imageData = input.data?.[0];\nconsole.log('imageData exists:', !!imageData);\n\nif (!imageData?.b64_json) {\n  return [{\n    json: {\n      success: false,\n      error: 'No image data in OpenAI response',\n      error_details: { raw: input },\n      url: null\n    }\n  }];\n}\n\nconst filename = triggerData.filename || `image_${Date.now()}.png`;\nconst finalFilename = filename.endsWith('.png') ? filename : `${filename}.png`;\nconst binaryData = Buffer.from(imageData.b64_json, 'base64');\nconsole.log('Binary data size:', binaryData.length);\n\nconst contentHash = crypto.createHash('sha256').update(binaryData).digest('hex');\nconsole.log('Content hash:', contentHash.substring(0, 20) + '...');\n\nconst host = 'b6fb17d8164be6988c26d3c2960c9705.r2.cloudflarestorage.com';\nconst path = `/mise-en-place/${finalFilename}`;\n\nconst signedHeaders = signRequest(\n  'PUT',\n  host,\n  path,\n  'fb520a4f90a4d365e705dba2310b3d25',\n  '545632b7309a2c01f91e6ede26c9db14ceb70b3b96f15f722ab5e9d3b03c452b',\n  contentHash\n);\n\nconsole.log('Signed headers:', JSON.stringify(signedHeaders, null, 2));\n\nreturn [{\n  json: {\n    _success: true,\n    filename: finalFilename,\n    revised_prompt: imageData.revised_prompt,\n    model_used: triggerData.options?.model || 'dall-e-3',\n    b64_json: imageData.b64_json,\n    signed_headers: signedHeaders,\n    upload_url: `https://${host}${path}`\n  },\n  binary: {\n    data: {\n      data: binaryData.toString('base64'),\n      mimeType: 'image/png',\n      fileName: finalFilename\n    }\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000003",
+      "name": "Prepare Upload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 0],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.upload_url }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $json.signed_headers.Authorization }}"
+            },
+            {
+              "name": "x-amz-date",
+              "value": "={{ $json.signed_headers['x-amz-date'] }}"
+            },
+            {
+              "name": "x-amz-content-sha256",
+              "value": "={{ $json.signed_headers['x-amz-content-sha256'] }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "image/png"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000004",
+      "name": "Upload to R2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 0],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build final response - handles both success and error cases\nconst input = $input.first().json;\nconst prepareData = $('Prepare Upload').first().json;\n\n// Check if this is an error from R2 upload\nif (input.error || input.statusCode >= 400) {\n  // R2 failed - return data URL instead so image still works\n  const dataUrl = prepareData?.b64_json ? `data:image/png;base64,${prepareData.b64_json}` : null;\n  return [{\n    json: {\n      success: false,\n      error: 'R2 upload failed - returning data URL instead',\n      error_details: {\n        message: input.message || input.statusMessage || 'Upload error',\n        statusCode: input.statusCode\n      },\n      filename: prepareData?.filename,\n      url: dataUrl,\n      data_url: dataUrl,\n      model_used: prepareData?.model_used,\n      revised_prompt: prepareData?.revised_prompt\n    }\n  }];\n}\n\n// Success case - build public URL\nconst publicUrl = `https://pub-ff44dab9301f402da0492478da2c9cfb.r2.dev/${prepareData.filename}`;\n\nreturn [{\n  json: {\n    success: true,\n    url: publicUrl,\n    filename: prepareData.filename,\n    model_used: prepareData.model_used,\n    revised_prompt: prepareData.revised_prompt\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000005",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 0],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle OpenAI API error - format for parent workflow\nconst error = $input.first().json;\n\nlet triggerData;\ntry {\n  triggerData = $('Execute Workflow Trigger').first().json;\n} catch (e) {\n  try {\n    triggerData = $('Normalize Webhook Input').first().json;\n  } catch (e2) {\n    triggerData = {};\n  }\n}\n\nreturn [{\n  json: {\n    success: false,\n    error: 'OpenAI image generation failed',\n    error_details: {\n      message: error.message || error.error?.message || 'API error',\n      code: error.code || error.error?.code,\n      type: error.type || error.error?.type,\n      statusCode: error.statusCode,\n      raw: error\n    },\n    input_prompt: triggerData?.prompt,\n    url: null\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000006",
+      "name": "Format OpenAI Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 200],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000007",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1300, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000011",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1500, 100]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Webhook Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Webhook Input": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenAI Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Prepare Upload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format OpenAI Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Upload": {
+      "main": [
+        [
+          {
+            "node": "Upload to R2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Upload to R2": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Format OpenAI Error": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "generate-image-v11-merge-fix",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": ""
+  },
+  "id": "",
+  "tags": []
+}
