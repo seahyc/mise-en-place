@@ -236,8 +236,18 @@ Trigger
 
 ### Prerequisites
 
-- Flutter SDK ^3.5.4
-- FVM (Flutter Version Manager) recommended
+```bash
+# Install FVM (Flutter Version Manager)
+brew tap leoafarias/fvm
+brew install fvm
+
+# Install Flutter via FVM
+fvm install 3.5.4
+fvm use 3.5.4
+
+# Verify installation
+fvm flutter --version
+```
 
 ### Environment Variables
 
