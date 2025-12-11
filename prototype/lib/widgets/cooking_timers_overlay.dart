@@ -56,12 +56,13 @@ class _CookingTimersOverlayState extends State<CookingTimersOverlay>
 
   // Default starting position for new timers
   Offset _getDefaultPosition(int index, Size screenSize) {
-    // Stack timers horizontally from top-right corner (horizontal card design)
+    // Stack timers horizontally from bottom-left corner (horizontal card design)
     const padding = 16.0;
     const cardWidth = 220.0;
+    const cardHeight = 120.0;
     return Offset(
-      screenSize.width - cardWidth - padding - (index * (cardWidth + 12)),
-      padding,
+      padding + (index * (cardWidth + 12)),
+      screenSize.height - cardHeight - padding,
     );
   }
 
