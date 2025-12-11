@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:elevenlabs_agents/elevenlabs_agents.dart';
 import '../models/recipe.dart';
@@ -22,6 +23,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   bool _isVoiceConnecting = false;
   ConversationClient? _voiceClient;
   String _voiceStatus = 'Idle';
+  final RecipeService _recipeService = RecipeService();
 
   // Watercolor aesthetic colors
   final Color _paperColor = const Color(0xFFFAFAF5); // Warm paper white
@@ -249,6 +251,14 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     });
 
     _voiceClient ??= ConversationClient(
+      clientTools: {
+        'create_recipe': CreateRecipeTool(recipeService: _recipeService),
+        'create_ingredient_master': CreateIngredientMasterTool(recipeService: _recipeService),
+        'create_equipment_master': CreateEquipmentMasterTool(recipeService: _recipeService),
+        'add_recipe_ingredient': AddRecipeIngredientTool(recipeService: _recipeService),
+        'add_recipe_equipment': AddRecipeEquipmentTool(recipeService: _recipeService),
+        'add_instruction_step': AddInstructionStepTool(recipeService: _recipeService),
+      },
       callbacks: ConversationCallbacks(
         onConnect: ({required conversationId}) {
           setState(() {
@@ -331,6 +341,222 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+}
+
+class CreateRecipeTool implements ClientTool {
+  final RecipeService recipeService;
+
+  CreateRecipeTool({required this.recipeService});
+
+  @override
+  Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
+    try {
+      debugPrint('[CreateRecipeTool] received params: $parameters');
+      final title = parameters['title']?.toString().trim();
+      if (title == null || title.isEmpty) {
+        return ClientToolResult.failure('title is required');
+      }
+
+      final description = parameters['description']?.toString() ?? '';
+      final mainImageUrl = parameters['main_image_url']?.toString() ?? '';
+      final sourceLink = parameters['source_link']?.toString() ?? '';
+      final prep = _parseInt(parameters['prep_time_minutes']) ?? 0;
+      final cook = _parseInt(parameters['cook_time_minutes']) ?? 0;
+      final basePax = _parseInt(parameters['base_pax']) ?? 1;
+      final cuisine = parameters['cuisine']?.toString() ?? 'other';
+
+      debugPrint('[CreateRecipeTool] calling createRecipeBasic title="$title" cuisine="$cuisine" prep=$prep cook=$cook basePax=$basePax');
+
+      final id = await recipeService.createRecipeBasic(
+        title: title,
+        description: description,
+        mainImageUrl: mainImageUrl,
+        sourceLink: sourceLink,
+        prepTimeMinutes: prep,
+        cookTimeMinutes: cook,
+        basePax: basePax,
+        cuisine: cuisine,
+      );
+
+      if (id == null) {
+        debugPrint('[CreateRecipeTool] createRecipeBasic returned null');
+        return ClientToolResult.failure('Failed to create recipe: insert returned no id (check RLS/constraints)');
+      }
+
+      debugPrint('[CreateRecipeTool] success id=$id');
+      return ClientToolResult.success(jsonEncode({
+        'id': id,
+        'title': title,
+        'prep_time_minutes': prep,
+        'cook_time_minutes': cook,
+        'base_pax': basePax,
+        'cuisine': cuisine,
+      }));
+    } catch (e, st) {
+      debugPrint('[CreateRecipeTool] error: $e\n$st');
+      return ClientToolResult.failure('CreateRecipeTool error: $e');
+    }
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+}
+
+class CreateIngredientMasterTool implements ClientTool {
+  final RecipeService recipeService;
+  CreateIngredientMasterTool({required this.recipeService});
+
+  @override
+  Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
+    try {
+      debugPrint('[CreateIngredientMasterTool] params=$parameters');
+      final name = parameters['name']?.toString().trim();
+      if (name == null || name.isEmpty) {
+        return ClientToolResult.failure('name is required');
+      }
+      final img = parameters['default_image_url']?.toString();
+      final id = await recipeService.createIngredientMaster(name: name, defaultImageUrl: img);
+      if (id == null) return ClientToolResult.failure('Failed to create ingredient_master');
+      return ClientToolResult.success(jsonEncode({'id': id, 'name': name}));
+    } catch (e, st) {
+      debugPrint('[CreateIngredientMasterTool] error: $e\n$st');
+      return ClientToolResult.failure('CreateIngredientMasterTool error: $e');
+    }
+  }
+}
+
+class CreateEquipmentMasterTool implements ClientTool {
+  final RecipeService recipeService;
+  CreateEquipmentMasterTool({required this.recipeService});
+
+  @override
+  Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
+    try {
+      debugPrint('[CreateEquipmentMasterTool] params=$parameters');
+      final name = parameters['name']?.toString().trim();
+      if (name == null || name.isEmpty) {
+        return ClientToolResult.failure('name is required');
+      }
+      final icon = parameters['icon_url']?.toString();
+      final id = await recipeService.createEquipmentMaster(name: name, iconUrl: icon);
+      if (id == null) return ClientToolResult.failure('Failed to create equipment_master');
+      return ClientToolResult.success(jsonEncode({'id': id, 'name': name}));
+    } catch (e, st) {
+      debugPrint('[CreateEquipmentMasterTool] error: $e\n$st');
+      return ClientToolResult.failure('CreateEquipmentMasterTool error: $e');
+    }
+  }
+}
+
+class AddRecipeIngredientTool implements ClientTool {
+  final RecipeService recipeService;
+  AddRecipeIngredientTool({required this.recipeService});
+
+  @override
+  Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
+    try {
+      debugPrint('[AddRecipeIngredientTool] params=$parameters');
+      final recipeId = parameters['recipe_id']?.toString();
+      final ingredientId = parameters['ingredient_id']?.toString();
+      if (recipeId == null || recipeId.isEmpty) {
+        return ClientToolResult.failure('recipe_id is required');
+      }
+      if (ingredientId == null || ingredientId.isEmpty) {
+        return ClientToolResult.failure('ingredient_id is required');
+      }
+      final amount = _parseDouble(parameters['amount']);
+      final unit = parameters['unit']?.toString();
+      final displayString = parameters['display_string']?.toString();
+      final comment = parameters['comment']?.toString();
+
+      final id = await recipeService.addRecipeIngredient(
+        recipeId: recipeId,
+        ingredientMasterId: ingredientId,
+        amount: amount,
+        unit: unit,
+        displayString: displayString,
+        comment: comment,
+      );
+
+      if (id == null) return ClientToolResult.failure('Failed to add recipe_ingredient');
+      return ClientToolResult.success(jsonEncode({'id': id, 'recipe_id': recipeId, 'ingredient_id': ingredientId}));
+    } catch (e, st) {
+      debugPrint('[AddRecipeIngredientTool] error: $e\n$st');
+      return ClientToolResult.failure('AddRecipeIngredientTool error: $e');
+    }
+  }
+}
+
+class AddRecipeEquipmentTool implements ClientTool {
+  final RecipeService recipeService;
+  AddRecipeEquipmentTool({required this.recipeService});
+
+  @override
+  Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
+    try {
+      debugPrint('[AddRecipeEquipmentTool] params=$parameters');
+      final recipeId = parameters['recipe_id']?.toString();
+      final equipmentId = parameters['equipment_id']?.toString();
+      if (recipeId == null || recipeId.isEmpty) {
+        return ClientToolResult.failure('recipe_id is required');
+      }
+      if (equipmentId == null || equipmentId.isEmpty) {
+        return ClientToolResult.failure('equipment_id is required');
+      }
+      final placeholderKey = parameters['placeholder_key']?.toString();
+      final id = await recipeService.addRecipeEquipment(
+        recipeId: recipeId,
+        equipmentMasterId: equipmentId,
+        placeholderKey: placeholderKey,
+      );
+      if (id == null) return ClientToolResult.failure('Failed to add recipe_equipment');
+      return ClientToolResult.success(jsonEncode({'id': id, 'recipe_id': recipeId, 'equipment_id': equipmentId}));
+    } catch (e, st) {
+      debugPrint('[AddRecipeEquipmentTool] error: $e\n$st');
+      return ClientToolResult.failure('AddRecipeEquipmentTool error: $e');
+    }
+  }
+}
+
+class AddInstructionStepTool implements ClientTool {
+  final RecipeService recipeService;
+  AddInstructionStepTool({required this.recipeService});
+
+  @override
+  Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
+    try {
+      debugPrint('[AddInstructionStepTool] params=$parameters');
+      final recipeId = parameters['recipe_id']?.toString();
+      final shortText = parameters['short_text']?.toString();
+      final orderIndex = _parseInt(parameters['order_index']);
+      if (recipeId == null || recipeId.isEmpty) {
+        return ClientToolResult.failure('recipe_id is required');
+      }
+      if (shortText == null || shortText.isEmpty) {
+        return ClientToolResult.failure('short_text is required');
+      }
+      final idx = orderIndex ?? 0;
+      final detailed = parameters['detailed_description']?.toString();
+      final mediaUrl = parameters['media_url']?.toString();
+
+      final id = await recipeService.addInstructionStep(
+        recipeId: recipeId,
+        orderIndex: idx,
+        shortText: shortText,
+        detailedDescription: detailed,
+        mediaUrl: mediaUrl,
+      );
+      if (id == null) return ClientToolResult.failure('Failed to add instruction_step');
+      return ClientToolResult.success(jsonEncode({'id': id, 'recipe_id': recipeId, 'order_index': idx}));
+    } catch (e, st) {
+      debugPrint('[AddInstructionStepTool] error: $e\n$st');
+      return ClientToolResult.failure('AddInstructionStepTool error: $e');
+    }
   }
 }
 

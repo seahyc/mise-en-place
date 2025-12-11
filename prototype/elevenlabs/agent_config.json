@@ -1,6 +1,6 @@
 {
-  "agent_id": "agent_7501kc6hnyzfe2nraabtajn6vq17",
-  "name": "Gordon Ramsay",
+  "agent_id": "agent_3201kc6kprh1ed8t1ese75dms3fr",
+  "name": "New agent",
   "conversation_config": {
     "asr": {
       "quality": "high",
@@ -9,7 +9,7 @@
       "keywords": []
     },
     "turn": {
-      "turn_timeout": -1.0,
+      "turn_timeout": 7.0,
       "initial_wait_time": null,
       "silence_end_call_timeout": -1.0,
       "soft_timeout_config": {
@@ -17,35 +17,30 @@
         "message": "Hhmmmm...yeah give me a second..."
       },
       "mode": "turn",
-      "turn_eagerness": "patient"
+      "turn_eagerness": "normal"
     },
     "tts": {
       "model_id": "eleven_turbo_v2",
-      "voice_id": "nPczCjzI2devNBz1zQrb",
+      "voice_id": "cjVigY5qzO86Huf0OWal",
       "supported_voices": [],
       "suggested_audio_tags": [],
       "agent_output_audio_format": "pcm_16000",
       "optimize_streaming_latency": 3,
-      "stability": 0.0,
-      "speed": 1.07,
+      "stability": 0.5,
+      "speed": 1.0,
       "similarity_boost": 0.8,
       "text_normalisation_type": "system_prompt",
       "pronunciation_dictionary_locators": []
     },
     "conversation": {
       "text_only": false,
-      "max_duration_seconds": 3600,
+      "max_duration_seconds": 600,
       "client_events": [
         "audio",
         "interruption",
         "user_transcript",
         "agent_response",
-        "agent_response_correction",
-        "agent_response_metadata",
-        "agent_tool_request",
-        "agent_chat_response_part",
-        "agent_tool_response",
-        "vad_score"
+        "agent_response_correction"
       ]
     },
     "language_presets": {},
@@ -53,80 +48,35 @@
       "background_voice_detection": false
     },
     "agent": {
-      "first_message": "Right then, {{user_name}}! {{recipe_title}} - {{total_steps}} steps, about {{estimated_time}} if you don't waddle about. Ready? Let's cook!\n",
+      "first_message": "Hey there! What would you like to cook today?",
       "language": "en",
       "dynamic_variables": {
-        "dynamic_variable_placeholders": {
-          "user_name": "Chef",
-          "recipe_title": "Recipe",
-          "total_steps": "1",
-          "estimated_time": "30 mins",
-          "initial_servings": "1",
-          "experience_level": "intermediate"
-        }
+        "dynamic_variable_placeholders": {}
       },
       "disable_first_message_interruptions": false,
       "prompt": {
-        "prompt": "You are Gordon Ramsay coaching {{user_name}} through {{recipe_title}} ({{total_steps}} steps, serving {{initial_servings}}). Experience level: {{experience_level}}. You can hear them but cannot see what they're doing.\n\nAdjust your guidance based on experience:\n- beginner: More detail, explain why, be patient\n- intermediate: Standard guidance, assume basics known\n- advanced: Brief, trust their instincts, focus on timing\n\n## CORE LOOP\n1. Brief current step (SHORT - one sentence max)\n2. Wait for them to confirm \"done\" or ask questions\n3. When done → call `mark_step_complete()` → brief next step\n4. If they have issues → call `modify_instructions`\n\n## TOOLS\n**Navigation:**\n- `mark_step_complete()` - Mark current step done, auto-advances. No params needed.\n- `navigate_to_step(target)` - Use 'next', 'previous', or step number. Defaults to 'next'.\n\n**State:**\n- `get_cooking_state` - Full state with current step details. Call if unsure where they are.\n- `get_full_recipe_details` - All ingredients, equipment, steps.\n\n**Timers (use manage_timer):**\n- `manage_timer(action='set', duration_seconds, label, emoji)` - Create timer e.g., (action='set', duration_seconds=300, label='boil pasta', emoji='🍝')\n- `manage_timer(action='get')` - Check all timers or specific one by label/id. CRITICAL: When telling user time remaining, subtract 3 seconds from the returned value to account for audio latency (e.g., if timer shows 45 seconds, say \"42 seconds\")\n- `manage_timer(action='dismiss')` - Dismiss completed timer (by label/id or most recent)\n- You'll get `[TIMER_MILESTONE]` and `[TIMER_COMPLETE]` messages - alert user immediately!\n\n**Adaptation:**\n- `modify_instructions(issue_type, details)` - burnt_ingredient, missing_ingredient, equipment_issue, portion_change, etc.\n- `switch_units(unit_system)` - \"metric\" or \"imperial\"\n\n## PERSONALITY\n- Short, punchy. This is voice, not a lecture\n- Impatient but supportive. \"Bloody hell\" when frustrated, \"Beautiful!\" when they nail it\n- \"Donkey\" when they mess up, genuine passion when they succeed\n- Remind them to prep ahead: \"While that simmers, get your X ready\"\n- Taste constantly: \"Have you tasted it? TASTE IT!\"\n\n## HANDLING PROBLEMS\n- Something burnt/missing? → Call `modify_instructions` with details\n- \"Right, stop. What happened?\" → Assess → Fix fast\n- Dark humor: \"Well, that's one way to make charcoal.\"\n\n## SAFETY (interrupt everything)\n- Burns/cuts: \"Stop. Are you hurt?\"\n- Fire/smoke: \"TURN IT OFF. NOW. Step back.\"\n\n## RULES\n1. ONE instruction at a time\n2. Keep responses SHORT - 1-2 sentences\n3. Move forward when they confirm - don't linger\n4. Timer alerts take priority over everything",
-        "llm": "claude-sonnet-4-5",
+        "prompt": "You are **Aroma**, an empathetic, conversational, expert culinary assistant. You help the user decide what to cook, generate recipes, and provide personalized recommendations based on mood, dietary restrictions, preferences, skill level, available ingredients, and context.\n---\n## Responsibilities\n### 1. Recipe Recommendation\n- Suggest dishes based on mood, cravings, dietary restrictions, health goals, cooking skill, time available, cuisine preferences, and available ingredients.\n- Provide alternatives if the user dislikes something or asks for changes.\n### 2. Interactive Cooking Guidance\n- Provide detailed, step-by-step instructions with timing, temperatures, substitutions, variations, plating tips, and difficulty level.\n- Adapt instructions to the user’s kitchen equipment.\n- Keep steps clear and beginner-friendly when needed.\n### 3. Mood and Context Awareness\n- Infer mood from the user’s language (e.g., stressed → quick comfort food).\n- Tailor tone accordingly: calm, motivating, or energetic.\n- Ask clarifying questions only when necessary.\n### 4. Dietary Restrictions and Preferences\n- Always respect restrictions (vegetarian, vegan, allergies, intolerances, halal, Jain, low-carb, etc.).\n- Track preferences within the current conversation only.\n### 5. Culinary Intelligence\n- Explain cooking science, flavor pairings, and techniques when asked.\n- Provide meal prep advice, ingredient storage tips, and healthier alternatives.\n- Generate creative or fusion recipes when requested.\n### 6. Structured Output Capability\n- Provide structured outputs (such as JSON) when the user requests it.\n- Default outputs should be conversational but organized.\n---\n## Output Rules\nEvery recipe should include:\n- **Recipe Name**  \n- **Short Description**  \n- **Ingredients**  \n- **Step-by-Step Instructions**  \n- **Prep Time**  \n- **Cook Time**  \n- **Total Time**  \n- **Difficulty**  \n- **Substitutions**  \n- **Optional Garnishes**  \n- **Equipment** (if relevant)  \n- **Nutrition Info** (if the user asks)\nWhen offering multiple recommendations, categorize them (e.g., *Quick*, *Comforting*, *Healthy*, *Indulgent*, *Beginner-Friendly*, *Creative/Fusion*).\nUse warm, encouraging, friendly language. Never overwhelm the user. Adapt to how tired, stressed, or motivated they sound.\n---\n## Goal\nContinuously understand the user’s mood, needs, and preferences, then recommend the best possible dish. Make cooking feel enjoyable, simple, and personalized.\n",
+        "llm": "gemini-2.5-flash",
         "reasoning_effort": null,
-        "thinking_budget": null,
-        "temperature": 0.31,
+        "thinking_budget": 0,
+        "temperature": 0.0,
         "max_tokens": -1,
         "tool_ids": [
-          "tool_5801kc6jkf7hfp79rdy5z5nkd50x",
-          "tool_3801kc6jkfnzfd8aqd100exfpv77",
-          "tool_4301kc6jkg4ge0fvza26t765kxcb",
-          "tool_8101kc6jkgmtergr56qzhksjsxps",
-          "tool_4001kc6jkh42eeptf1cx16ask2ee",
-          "tool_4801kc6jkkx5f2795w9v36q5xkzp",
-          "tool_8401kc6jkmbrffnancqsqtkg8cs3"
+          "tool_9301kc6pkppjfd0tcckx9628nfr5",
+          "tool_4801kc6pkq3resr8a4tw7vjg7g9c",
+          "tool_2701kc6pkqhbe9crqwdpvm4qp1sy",
+          "tool_5301kc6pkqw3egbawp2kw9s52ncg",
+          "tool_3101kc6pkr7bfh2tqgcqh5z1m0hv",
+          "tool_3501kc6pkrp7ed6sxghbmq637t9d",
+          "tool_8301kc6pks5eep2tyndws5sjys7w",
+          "tool_6501kc6pkskeef6tr7vytvc1xa9d"
         ],
         "built_in_tools": {
-          "end_call": {
-            "type": "system",
-            "name": "end_call",
-            "description": "",
-            "response_timeout_secs": 20,
-            "disable_interruptions": false,
-            "force_pre_tool_speech": false,
-            "assignments": [],
-            "tool_call_sound": null,
-            "tool_call_sound_behavior": "auto",
-            "params": {
-              "system_tool_type": "end_call"
-            }
-          },
-          "language_detection": {
-            "type": "system",
-            "name": "language_detection",
-            "description": "",
-            "response_timeout_secs": 20,
-            "disable_interruptions": false,
-            "force_pre_tool_speech": false,
-            "assignments": [],
-            "tool_call_sound": null,
-            "tool_call_sound_behavior": "auto",
-            "params": {
-              "system_tool_type": "language_detection"
-            }
-          },
+          "end_call": null,
+          "language_detection": null,
           "transfer_to_agent": null,
           "transfer_to_number": null,
-          "skip_turn": {
-            "type": "system",
-            "name": "skip_turn",
-            "description": "",
-            "response_timeout_secs": 20,
-            "disable_interruptions": false,
-            "force_pre_tool_speech": false,
-            "assignments": [],
-            "tool_call_sound": null,
-            "tool_call_sound_behavior": "auto",
-            "params": {
-              "system_tool_type": "skip_turn"
-            }
-          },
+          "skip_turn": null,
           "play_keypad_touch_tone": null,
           "voicemail_detection": null
         },
@@ -134,7 +84,7 @@
         "native_mcp_server_ids": [],
         "knowledge_base": [],
         "custom_llm": null,
-        "ignore_default_personality": true,
+        "ignore_default_personality": false,
         "rag": {
           "enabled": false,
           "embedding_model": "e5_mistral_7b_instruct",
@@ -143,11 +93,100 @@
           "max_retrieved_rag_chunks_count": 20,
           "query_rewrite_prompt_override": null
         },
-        "timezone": "Asia/Singapore",
+        "timezone": null,
         "backup_llm_config": {
           "preference": "default"
         },
         "tools": [
+          {
+            "type": "client",
+            "name": "create_recipe",
+            "description": "Create a new recipe entry in the app database. Use after confirming title and key details with the user. Returns the created recipe id.",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": {
+              "type": "object",
+              "required": [
+                "title"
+              ],
+              "description": "",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "Recipe title (required).",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Short description of the recipe.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "main_image_url": {
+                  "type": "string",
+                  "description": "Image URL if provided by user.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "source_link": {
+                  "type": "string",
+                  "description": "Source/reference link if any.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "prep_time_minutes": {
+                  "type": "integer",
+                  "description": "Prep time in minutes (optional).",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "cook_time_minutes": {
+                  "type": "integer",
+                  "description": "Cook time in minutes (optional).",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "base_pax": {
+                  "type": "integer",
+                  "description": "Base servings (defaults to 1).",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "cuisine": {
+                  "type": "string",
+                  "description": "Cuisine tag (default 'other').",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                }
+              }
+            },
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
           {
             "type": "client",
             "name": "mark_step_complete",
@@ -515,8 +554,8 @@
     }
   },
   "metadata": {
-    "created_at_unix_secs": 1765451432,
-    "updated_at_unix_secs": 1765452404
+    "created_at_unix_secs": 1765453555,
+    "updated_at_unix_secs": 1765456603
   },
   "platform_settings": {
     "evaluation": {
@@ -528,10 +567,10 @@
       "expandable": "never",
       "avatar": {
         "type": "orb",
-        "color_1": "#2792dc",
-        "color_2": "#9ce6e6"
+        "color_1": "#2792DC",
+        "color_2": "#9CE6E6"
       },
-      "feedback_mode": "during",
+      "feedback_mode": "none",
       "end_feedback": {
         "type": "rating"
       },
@@ -715,7 +754,7 @@
           },
           "sexual_minors": {
             "is_enabled": false,
-            "threshold": 0.3
+            "threshold": 0.5
           }
         }
       }
@@ -762,8 +801,8 @@
   },
   "access_info": {
     "is_creator": true,
-    "creator_name": "Ying Cong Seah",
-    "creator_email": "yingcong@glints.com",
+    "creator_name": "Satvik Sinha",
+    "creator_email": "satviksinha2002@gmail.com",
     "role": "admin"
   },
   "tags": [],
