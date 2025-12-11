@@ -1,0 +1,8 @@
+PREVIEW IMAGE CHECK RESULTS (image_url)
+================================================================================
+
+Total items: 144
+Working: 144
+Broken: 0
+Missing: 0
+

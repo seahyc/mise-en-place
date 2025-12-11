@@ -1,0 +1,382 @@
+INGREDIENT IMAGE CHECK RESULTS
+================================================================================
+
+Total: 121
+Working: 121
+Broken: 0
+No URL: 0
+
+================================================================================
+WORKING IMAGES
+================================================================================
+Achiote Paste (ID: eeddaf05-e024-4c34-83b8-e2e45e70605c)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Anchovy Paste (ID: 2f1280af-8548-4993-91c2-8dbd17a85d5b)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Arborio Rice (ID: a594183d-83da-43e6-a0b4-bd6879c6534a)
+  https://img.icons8.com/fluency/48/rice-bowl.png
+
+Avocado (ID: 2f2754b6-bbac-4aae-a136-642ef8926ab0)
+  https://img.icons8.com/fluency/48/avocado.png
+
+Bamboo Shoots (ID: b4badcde-74ee-4ff7-92a4-ae2ac92c94f7)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Basil (ID: f98b0ef2-baf8-430a-a62c-1a281a624a37)
+  https://img.icons8.com/fluency/48/basil.png
+
+Bean Sprouts (ID: c78b9047-5ee9-4274-96e9-ecea5822a381)
+  https://cdn-icons-png.flaticon.com/128/3082/3082004.png
+
+Beef Broth (ID: c0e67635-52c9-442e-a8cc-de81d9d77ee7)
+  https://img.icons8.com/fluency/48/steak.png
+
+Beef Mince (ID: 24de3153-1f85-421a-817e-b04087813d87)
+  https://img.icons8.com/fluency/48/steak.png
+
+Beef Steak (ID: 6efb1491-4fd8-4114-8871-70e70725263c)
+  https://img.icons8.com/fluency/48/steak.png
+
+Bell Pepper (ID: b8cbfa0c-ef55-4402-95ab-49ee29037c18)
+  https://img.icons8.com/fluency/48/paprika.png
+
+Black Beans (ID: 89400781-f376-4628-85d4-fce094624cd0)
+  https://cdn-icons-png.flaticon.com/128/3082/3082004.png
+
+Black Pepper (ID: 710de80a-b294-436a-b5ee-e694fb530665)
+  https://img.icons8.com/fluency/48/paprika.png
+
+Brioche Bread (ID: aae8f605-17a1-4011-9a28-d056f6f9a6df)
+  https://img.icons8.com/fluency/48/bread.png
+
+Broccoli (ID: 3f3a690c-fcfd-4afc-a079-ba5dcae4d6db)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Brown Sugar (ID: 324ada66-a323-4c27-a948-4fa7ec1173c8)
+  https://img.icons8.com/fluency/48/sugar.png
+
+Burger Buns (ID: fc1c6b04-d6db-4315-84f8-d4a7b872dc09)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Butter (ID: a4d2312c-f999-40d3-a48a-ec9d8c3ed6f9)
+  https://img.icons8.com/fluency/48/butter.png
+
+Cabbage (ID: a5c1e79f-a5b2-4617-ba94-0a23820726a7)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Carrots (ID: 6e10707e-0e56-41a5-a7f3-e7e06d6ba3f3)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Cheese (ID: d8766075-c2c7-4dc7-8c88-a6f45b45d6fd)
+  https://img.icons8.com/fluency/48/cheese.png
+
+Chicken Breast (ID: 57deefac-9a15-4e4a-a497-889deb3b5f66)
+  https://img.icons8.com/fluency/48/chicken.png
+
+Chicken Stock (ID: cf455652-4a1c-4f4e-97c0-3e87161bd824)
+  https://img.icons8.com/fluency/48/chicken.png
+
+Chicken Thighs (ID: b6596874-e9cf-4d98-b004-dfa7b3fa2efc)
+  https://img.icons8.com/fluency/48/chicken.png
+
+Chili Powder (ID: f9fa3a75-3034-41fe-ad3d-7bc12e243efd)
+  https://img.icons8.com/fluency/48/chili-pepper.png
+
+Cilantro (ID: dcc6429f-f367-4f4c-9c5b-54eb65638ae1)
+  https://img.icons8.com/fluency/48/parsley.png
+
+Cinnamon (ID: da7552af-30eb-4c94-bda8-d58c438b1c3d)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Coconut Milk (ID: 5ee1344e-066d-4bba-bc6b-add1b1d96db8)
+  https://img.icons8.com/fluency/48/milk-bottle.png
+
+Coriander (ID: 4b7e2d66-969c-4e59-8a84-9dc5d6ea32e0)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Corn Tortillas (ID: 618d15c1-f5fa-4fa0-bff5-018af401d34a)
+  https://img.icons8.com/fluency/48/taco.png
+
+Croutons (ID: 619e5a75-8cc1-459c-8640-bc9e38aeca07)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Crushed Tomatoes (ID: 9a653ec7-d743-43bf-9c27-574e44d47ea7)
+  https://img.icons8.com/fluency/48/tomato.png
+
+Cucumber (ID: 1449fd98-222e-49b2-b852-1e1164a8d305)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Cumin (ID: 663917fa-9237-455f-8698-d63276c0b253)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Egg (ID: 5e0dd568-5c6c-47e5-a8a3-b95c5e9207e6)
+  https://img.icons8.com/color/48/000000/eggs.png
+
+Egg Noodles (ID: 2d5e85ab-75ca-47f2-9631-cb4563c09a31)
+  https://img.icons8.com/fluency/48/noodles.png
+
+Egg Yolk (ID: 90209867-fdfc-40bb-bd8b-bb970db42db7)
+  https://img.icons8.com/color/48/000000/eggs.png
+
+Eggs (ID: aae0f6c1-e3f5-40ca-8848-3683e71704df)
+  https://img.icons8.com/color/48/000000/eggs.png
+
+Enchilada Sauce (ID: 98afd310-1b8d-4578-a3de-f18e8b8fc8e2)
+  https://img.icons8.com/fluency/48/soy-sauce.png
+
+Feta Cheese (ID: d66a238b-fb8e-4045-a3df-5161d9e9ffe2)
+  https://img.icons8.com/fluency/48/cheese.png
+
+Fish Sauce (ID: d179ec34-e1d7-4f1a-be02-1a3607b98640)
+  https://img.icons8.com/fluency/48/soy-sauce.png
+
+Flour (ID: e728a2ac-994d-4aa8-9665-13f9f5dcc6c0)
+  https://cdn-icons-png.flaticon.com/128/3050/3050158.png
+
+Fresh Pineapple (ID: 19541f2d-67d0-4808-81d4-56854c2a5a7c)
+  https://img.icons8.com/fluency/48/pineapple.png
+
+Galangal (ID: f1bfd10c-7517-4b2c-a4dd-3c2055f9b2f2)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Garam Masala (ID: 3cd80ce0-c9c1-49a3-b2f7-1bb7a6a110bf)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Garlic (ID: 51dccd9a-0fbc-413d-a285-8aa68ce509b5)
+  https://img.icons8.com/fluency/48/garlic.png
+
+Ginger (ID: 16df7f6d-ec95-4d44-a182-fe7ea1159aba)
+  https://img.icons8.com/fluency/48/ginger.png
+
+Green Curry Paste (ID: b55b4ead-e387-450e-ab8c-13f9e7d13a46)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Green Onions (ID: 858db549-f1ad-406c-9f9a-36337b7f51f2)
+  https://img.icons8.com/fluency/48/onion.png
+
+Guajillo Chiles (ID: 9a8cb7f4-39a7-4a8a-999c-699a86b2af26)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Guanciale or Bacon (ID: a2e4b069-167c-438a-a1a2-935f84d38af0)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Heavy Cream (ID: 46d5d31c-9c6f-4a07-b78c-4f0b3af27911)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Hot Sauce (ID: a9569a73-d953-4177-8cdd-018d91af1b4e)
+  https://img.icons8.com/fluency/48/soy-sauce.png
+
+Jalapeño (ID: 8c8c4ecd-d5a9-4517-aae1-0b77a85634e1)
+  https://img.icons8.com/fluency/48/chili-pepper.png
+
+Kaffir Lime Leaves (ID: a283a9db-6455-4f57-b45b-60ec60e8ca3c)
+  https://img.icons8.com/fluency/48/citrus.png
+
+Kalamata Olives (ID: a33edf02-ad1d-45f6-80be-57b7822dba52)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Kidney Beans (ID: 4652ed14-1943-468b-9278-ccd089504e39)
+  https://cdn-icons-png.flaticon.com/128/3082/3082004.png
+
+Lemon Juice (ID: b1cf46b4-1d5a-475e-b1ce-f7ea85ed42bb)
+  https://img.icons8.com/fluency/48/citrus.png
+
+Lemongrass (ID: aaa8496d-32f7-4fd1-b7d6-6e8b14ade6e9)
+  https://img.icons8.com/fluency/48/citrus.png
+
+Lettuce (ID: 5f1d3792-c75d-4b6d-acc3-619ec25406ac)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Lime (ID: 34b76305-5046-44d4-8360-c20fd60722ee)
+  https://img.icons8.com/fluency/48/citrus.png
+
+Lime Juice (ID: c224e9eb-96b9-40b8-84f7-06fa49b48eac)
+  https://img.icons8.com/fluency/48/citrus.png
+
+Lime Leaves (ID: ff521d80-8f01-4a93-9ea6-d25f5f34a66a)
+  https://img.icons8.com/fluency/48/citrus.png
+
+Maple Syrup (ID: 68cd5689-3dcd-4206-9cbe-1d8059a86107)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Mayonnaise (ID: 4f8fb38b-202c-4e3c-b482-e0ba7f32763b)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Milk (ID: dea5a9b6-5673-4947-accb-9e9af021340b)
+  https://img.icons8.com/fluency/48/milk-bottle.png
+
+Miso Paste (ID: 636dd681-92d4-4cef-9721-53675df9ed03)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Mozzarella (ID: 819f061a-de96-47c8-8a64-54844b0b2691)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Mushrooms (ID: 8c2782da-b58a-4e23-b2b5-c182b7b30343)
+  https://img.icons8.com/fluency/48/mushroom.png
+
+Nori (ID: 6ecd5508-77ff-4ec4-8f05-3e056d00801d)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Olive Oil (ID: aef60237-67e0-4e86-ba38-3452ba17e178)
+  https://img.icons8.com/fluency/48/olive-oil.png
+
+Onion (ID: be9686f8-4569-4c13-92ef-1b52619bb688)
+  https://img.icons8.com/fluency/48/onion.png
+
+Oregano (ID: c04d5119-1075-48ab-92c6-bb00b3a27188)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Parmesan Cheese (ID: 5f5e920f-e815-4a99-916d-ef9a9048a5a3)
+  https://img.icons8.com/fluency/48/cheese.png
+
+Pasta (ID: 1423bcf1-fc04-4b30-a7c8-7d7da4a96ba9)
+  https://img.icons8.com/fluency/48/spaghetti.png
+
+Peanuts (ID: 3615480b-a2b8-4634-83da-e3466cd07524)
+  https://img.icons8.com/fluency/48/peanuts.png
+
+Pecorino Romano (ID: ce5fbbd8-0bff-4b0f-934b-d576be9eb8ac)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Pepper (ID: aff86508-f1f3-4903-a0f1-748da6fd7725)
+  https://img.icons8.com/fluency/48/paprika.png
+
+Pine Nuts (ID: 641d3104-9472-40aa-a419-fdb96c82ce56)
+  https://img.icons8.com/fluency/48/peanuts.png
+
+Pineapple Juice (ID: e11c8669-cdc1-47c6-afa3-11ebdba9a439)
+  https://img.icons8.com/fluency/48/pineapple.png
+
+Pinto Beans (ID: 74833e16-bf89-4b7c-aba9-09d5adc0ed2c)
+  https://cdn-icons-png.flaticon.com/128/3082/3082004.png
+
+Pizza Dough (ID: c99dc87c-0573-4a56-8314-716645425f03)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Pork Belly (ID: 83725670-877d-4454-b458-7315e37eeb27)
+  https://img.icons8.com/fluency/48/steak.png
+
+Pork Shoulder (ID: f5cf3946-4c6d-4cbd-b95d-d6215a959dc1)
+  https://img.icons8.com/fluency/48/steak.png
+
+Quinoa (ID: fb69e226-3fcb-4be3-8284-66f6d92b5b2d)
+  https://img.icons8.com/fluency/48/rice-bowl.png
+
+Ramen Noodles (ID: dbc15c42-57ab-407b-b1f1-09fc84b91137)
+  https://img.icons8.com/fluency/48/noodles.png
+
+Red Bell Pepper (ID: f861c712-9a71-472b-b5a5-d03f5af3b090)
+  https://img.icons8.com/fluency/48/paprika.png
+
+Red Onion (ID: cf210900-cf98-43c1-bb64-f2c55f041612)
+  https://img.icons8.com/fluency/48/onion.png
+
+Rice Noodles (ID: bc1dd0d8-f711-47bb-bcb1-55b64ba06818)
+  https://img.icons8.com/fluency/48/rice-bowl.png
+
+Rice Vinegar (ID: c25422f8-8d75-479f-8539-0fc6b0909ace)
+  https://img.icons8.com/fluency/48/rice-bowl.png
+
+Romaine Lettuce (ID: 58fdeb04-8dad-40b4-8dca-91e49e7e448b)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Salt (ID: 2b3a7dd5-0881-486b-b3f7-f67c5e49edd0)
+  https://img.icons8.com/fluency/48/salt-shaker.png
+
+Sesame Oil (ID: 7e65076d-215b-4dbe-8614-8bfca0da8a1d)
+  https://img.icons8.com/fluency/48/olive-oil.png
+
+Shallot (ID: 7219fdf3-b58d-43ec-874c-ae7a701e7159)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Shrimp (ID: d0d6621e-7dbb-4464-b561-90efbb41b994)
+  https://img.icons8.com/fluency/48/prawn.png
+
+Shrimp or Tofu (ID: 5a0d1de2-7681-419b-abf3-5713dfa5f68f)
+  https://img.icons8.com/fluency/48/prawn.png
+
+Smoked Paprika (ID: c390a162-9b99-4d87-ae03-724a118e245b)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Snap Peas (ID: dfebc522-f171-4af0-bd20-f470d361768e)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Sour Cream (ID: 192451cb-e4a9-4c0d-a20f-66c082012d5c)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Soy Sauce (ID: cd9c5c39-705a-46a0-9b70-f760a06f03cb)
+  https://img.icons8.com/fluency/48/soy-sauce.png
+
+Spaghetti (ID: 9d486c09-4ccc-457e-b9c7-d11a5408d85c)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Spinach (ID: 4db615bd-4bb9-4ba0-9548-46ca5b6633bb)
+  https://img.icons8.com/fluency/48/spinach.png
+
+Sugar (ID: faa2cf6c-2377-4267-9c64-c7031116bd54)
+  https://img.icons8.com/fluency/48/sugar.png
+
+Sweet Potato (ID: 8db1ed94-6777-4256-b3c4-4d4b025e98f5)
+  https://img.icons8.com/fluency/48/cooking-pot.png
+
+Tamarind Paste (ID: c0d1b781-c9c3-4df5-aebd-b5231d7cf3db)
+  https://cdn-icons-png.flaticon.com/128/765/765564.png
+
+Thai Basil (ID: 88253dab-0da5-4d0e-a881-7cf310118a56)
+  https://img.icons8.com/fluency/48/basil.png
+
+Thai Chili (ID: 313fcaae-6482-483d-8d4a-122b794e90f5)
+  https://img.icons8.com/fluency/48/chili-pepper.png
+
+Thyme (ID: 9dc809d2-3934-40e2-8811-6d65ca815436)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Tomato (ID: 0d433901-687d-432d-97df-5caa8c3f959d)
+  https://img.icons8.com/fluency/48/tomato.png
+
+Tomato Paste (ID: 70fa1a3d-a4b9-4720-9bbb-8e057761777e)
+  https://img.icons8.com/fluency/48/tomato.png
+
+Tomato Puree (ID: 8cb5b53d-64ba-4685-bb4c-c61439bcdfac)
+  https://img.icons8.com/fluency/48/tomato.png
+
+Tomato Sauce (ID: 99ac4a92-371a-4f03-98a1-811f6e3ee14a)
+  https://img.icons8.com/fluency/48/soy-sauce.png
+
+Tortillas (ID: 8feee88a-777a-4023-adee-67b67cb0c39e)
+  https://img.icons8.com/fluency/48/taco.png
+
+Turmeric (ID: 6b116c09-9ae9-4731-8a22-44c8e718c94c)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Vanilla Extract (ID: 6a1ea489-bc61-4cf7-a0fa-b4fdbc1146a5)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Vegetable Broth (ID: ba412eb8-0052-452b-8f4a-71f411c55e2b)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Vegetable Stock (ID: 0bf1e7c1-1cec-4bfe-90ce-8da039d0139e)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+Water (ID: 950669f7-2fb3-48d9-b683-602dbc5cba94)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+White Fish (ID: 0a93ad86-bda6-4b34-8a4f-901c0e8e9e64)
+  https://img.icons8.com/fluency/48/whole-fish.png
+
+White Wine (ID: b24f963a-c7e0-4881-b210-3c3acd429d12)
+  https://img.icons8.com/fluency/48/wine-bottle.png
+
+Yogurt (ID: 9355a749-ab95-4847-b05c-b8021b7af629)
+  https://img.icons8.com/fluency/48/ingredients.png
+
+
+================================================================================
+BROKEN IMAGES
+================================================================================
+
+================================================================================
+MISSING URLs
+================================================================================

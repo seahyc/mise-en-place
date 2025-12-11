@@ -1,0 +1,987 @@
+{
+  "name": "Modify Instructions (Structured Operations)",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=ingredient_master",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        2352
+      ],
+      "id": "ed1bbb5f-21b0-4750-bd73-8b14eca24cbf",
+      "name": "Lookup Ingredients",
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "equipment_master",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        2352
+      ],
+      "id": "eb776be8-3be3-4b6b-90b6-da169e0d6c9e",
+      "name": "Lookup Equipment",
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "session/modify",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "13887ba5-032f-4fec-8bda-766a9c7b0d6f",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1952,
+        1952
+      ],
+      "webhookId": "session-modify"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "session_steps",
+        "filterType": "string",
+        "filterString": "=session_id=eq.{{ $json.body.session_id }}&order=order_index",
+        "returnAll": true
+      },
+      "id": "fetch-session-steps-node",
+      "name": "Fetch Session Steps",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1792,
+        1952
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge webhook data with fetched session steps\nconst webhookData = $('Webhook').first().json;\nconsole.log('[Prepare Session Data] webhookData:', JSON.stringify(webhookData, null, 2));\n\nconst steps = $input.all().map(item => item.json);\nconsole.log('[Prepare Session Data] fetched steps count:', steps.length);\nconsole.log('[Prepare Session Data] raw step IDs from DB:', steps.map(s => ({ id: s.id, order_index: s.order_index, short_text: s.short_text })));\n\n// Split into completed and remaining\nconst completedSteps = steps.filter(s => s.is_completed || s.is_skipped);\nconst remainingSteps = steps.filter(s => !s.is_completed && !s.is_skipped);\nconst currentStepIndex = remainingSteps.length > 0 ? remainingSteps[0].order_index : steps.length;\n\nconsole.log('[Prepare Session Data] completed:', completedSteps.length, 'remaining:', remainingSteps.length, 'currentIndex:', currentStepIndex);\nconsole.log('[Prepare Session Data] remaining step IDs:', remainingSteps.map(s => s.id));\n\nconst result = {\n  // Pass through webhook data\n  session_id: webhookData.body?.session_id,\n  issue_type: webhookData.body?.issue_type,\n  details: webhookData.body?.details,\n  affected_ingredient: webhookData.body?.affected_ingredient,\n  affected_equipment: webhookData.body?.affected_equipment,\n  // Computed from DB\n  current_step_index: currentStepIndex,\n  completed_steps: completedSteps,\n  remaining_steps: remainingSteps,\n  total_steps: steps.length\n};\n\nconsole.log('[Prepare Session Data] output:', JSON.stringify(result, null, 2));\n\nreturn [{ json: result }];"
+      },
+      "id": "prepare-session-data-node",
+      "name": "Prepare Session Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        1952
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=ISSUE TYPE: {{ $json.issue_type }}\nDETAILS: {{ $json.details }}\nAFFECTED INGREDIENT: {{ $json.affected_ingredient || 'none' }}\nAFFECTED EQUIPMENT: {{ $json.affected_equipment || 'none' }}\nCURRENT STEP INDEX: {{ $json.current_step_index }}\nSESSION ID: {{ $json.session_id }}\n\nCOMPLETED STEPS (already done, cannot change):\n{{ JSON.stringify($json.completed_steps || [], null, 2) }}\n\nREMAINING STEPS (can modify):\n{{ JSON.stringify($json.remaining_steps || [], null, 2) }}\n\nAnalyze the issue and return atomic operations. You MUST respond with valid JSON matching the schema provided by the output parser.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a cooking session modifier for a voice-guided cooking app. Return atomic operations to help users recover from cooking issues.\n\nISSUE TYPES:\n- burnt_ingredient: Insert cleanup + prep steps, then update affected step for retry\n- missing_ingredient: Substitute with similar ingredient, or skip if non-essential\n- equipment_issue: Substitute equipment or suggest alternative technique\n- user_request: Modify steps creatively while respecting the dish\n- dietary_restriction: Remove/substitute problematic ingredients\n- portion_change: Adjust quantities across all steps\n\nOPERATION TYPES:\n- insert: Add new step. Use insert_order=1 for first new step, 2 for second, etc. DO NOT include step_id for insert operations.\n- update: Modify existing step (REQUIRED: step_id from remaining_steps)\n- skip: Mark step as skipped (REQUIRED: step_id from remaining_steps)\n- adjust_quantity: Change ingredient amount (REQUIRED: step_id, placeholder_key, adjusted_amount)\n- substitute_ingredient: Replace ingredient (REQUIRED: step_id, placeholder_key, ingredient_id, adjusted_amount, is_substitution=true, substitution_note)\n- substitute_equipment: Replace equipment (REQUIRED: step_id, placeholder_key, equipment_id, is_substitution=true, substitution_note)\n\nCRITICAL FIELD REQUIREMENTS:\n- insert operations: MUST have insert_order, short_text, detailed_description. MUST NOT have step_id.\n- update/skip operations: MUST have step_id from remaining_steps.\n- adjust_quantity/substitute operations: MUST have step_id from remaining_steps.\n\nFOR INSERT OPERATIONS:\n- Use insert_order field (1, 2, 3...) to specify the order of new steps\n- New steps are inserted BEFORE the current step\n- Example for burnt_ingredient: insert_order=1 for 'Clean Wok', insert_order=2 for 'Prep Fresh Protein'\n- DO NOT generate or include step_id - it will be auto-generated by the database\n\nRULES:\n1. PREFER substitute/adjust_quantity over insert (less work for user)\n2. Only modify remaining_steps (completed steps are locked)\n3. Keep agent_message warm and reassuring\n4. For substitutes, look up ingredient_id/equipment_id from database first\n\nDATABASE LOOKUPS:\n- SELECT id, name FROM ingredient_master WHERE name ILIKE '%term%' LIMIT 5\n- SELECT id, name FROM equipment_master WHERE name ILIKE '%term%' LIMIT 5"
+        }
+      },
+      "id": "23e9c1ac-732f-4499-94ce-37cfc98b09ec",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1408,
+        1952
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"operations\": {\n      \"type\": \"array\",\n      \"description\": \"List of atomic operations to apply\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"operation\": {\n            \"type\": \"string\",\n            \"enum\": [\"insert\", \"adjust_quantity\", \"substitute_ingredient\", \"substitute_equipment\", \"skip\", \"update\"],\n            \"description\": \"Type of operation\"\n          },\n          \"insert_order\": {\n            \"type\": \"integer\",\n            \"description\": \"For insert: relative order (1=first new step, 2=second, etc.)\"\n          },\n          \"step_id\": {\n            \"type\": \"string\",\n            \"description\": \"UUID of existing step to modify\"\n          },\n          \"short_text\": {\n            \"type\": \"string\",\n            \"description\": \"For insert/update: step title\"\n          },\n          \"detailed_description\": {\n            \"type\": \"string\",\n            \"description\": \"For insert/update: step instructions\"\n          },\n          \"placeholder_key\": {\n            \"type\": \"string\",\n            \"description\": \"For adjust_quantity/substitute: ingredient placeholder\"\n          },\n          \"adjusted_amount\": {\n            \"type\": \"number\",\n            \"description\": \"For adjust_quantity/substitute_ingredient: new ingredient amount\"\n          },\n          \"ingredient_id\": {\n            \"type\": \"string\",\n            \"description\": \"For substitute_ingredient: UUID of replacement ingredient\"\n          },\n          \"equipment_id\": {\n            \"type\": \"string\",\n            \"description\": \"For substitute_equipment: UUID of replacement equipment\"\n          },\n          \"is_substitution\": {\n            \"type\": \"boolean\",\n            \"description\": \"For substitute operations: always true\"\n          },\n          \"substitution_note\": {\n            \"type\": \"string\",\n            \"description\": \"For substitute: explanation of substitution\"\n          },\n          \"agent_notes\": {\n            \"type\": \"string\",\n            \"description\": \"Internal notes about this operation\"\n          }\n        },\n        \"required\": [\"operation\"]\n      }\n    },\n    \"agent_message\": {\n      \"type\": \"string\",\n      \"description\": \"Friendly message to tell the user about the changes\"\n    },\n    \"time_impact_minutes\": {\n      \"type\": \"integer\",\n      \"description\": \"Estimated additional time in minutes (can be negative)\"\n    }\n  },\n  \"required\": [\"operations\", \"agent_message\", \"time_impact_minutes\"]\n}\n"
+      },
+      "id": "d6b5ed30-68b5-4e1c-a42e-4caca9c5fbcf",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -1120,
+        2160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI Agent output and split into individual operations\nconst agentOutput = $input.first().json;\nconst webhookData = $('Webhook').first().json;\nconst sessionData = $('Prepare Session Data').first().json;\nconst currentStepIndex = sessionData.current_step_index || 0;\n\n// Get the parsed output - Structured Output Parser already parsed it\nlet parsed = agentOutput.output || agentOutput;\n\n// If it's a string, try to parse it (fallback for non-structured output)\nif (typeof parsed === 'string') {\n  try {\n    let clean = parsed.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    parsed = JSON.parse(clean);\n  } catch (e) {\n    return [{\n      json: {\n        operation: 'error',\n        session_id: webhookData.body?.session_id,\n        _agentMessage: \"I couldn't process that request. Let's continue with the recipe as is.\",\n        _timeImpact: 0,\n        _totalOps: 0,\n        _error: e.message\n      }\n    }];\n  }\n}\n\nconst operations = parsed.operations || [];\nconst agentMessage = parsed.agent_message || \"I've adjusted the recipe.\";\nconst timeImpact = parsed.time_impact_minutes || 0;\nconst sessionId = webhookData.body?.session_id;\n\n// If no operations, return a no-op\nif (operations.length === 0) {\n  return [{\n    json: {\n      operation: 'none',\n      session_id: sessionId,\n      _agentMessage: agentMessage,\n      _timeImpact: timeImpact,\n      _totalOps: 0\n    }\n  }];\n}\n\n// Return each operation with metadata fields\n// For insert operations, calculate step_index from insert_order\nreturn operations.map((op, idx) => {\n  let stepIndex = op.step_index; // fallback if AI still uses step_index\n  \n  // Calculate step_index from insert_order for insert operations\n  if (op.operation === 'insert' && op.insert_order) {\n    stepIndex = currentStepIndex + op.insert_order - 1;\n  }\n  \n  return {\n    json: {\n      operation: op.operation,\n      step_id: op.step_id,\n      session_id: sessionId,\n      step_index: stepIndex,\n      \n      // Metadata fields (not sent to DB with manual mapping)\n      _isLast: idx === operations.length - 1,\n      _agentMessage: agentMessage,\n      _timeImpact: timeImpact,\n      _totalOps: operations.length,\n      \n      // Operation-specific fields (passed through as-is)\n      ...op\n    }\n  };\n});"
+      },
+      "id": "dbedbc55-08ca-4d96-aba4-eef3ec362e59",
+      "name": "Parse & Split Operations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        1952
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "insert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bc60d978-dbe9-445c-8f01-0b491f672c39"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "insert"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "adjust_quantity",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bab1d51b-aa2d-4c6d-827f-006a716ebc4e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "adjust_quantity"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "substitute_ingredient",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "377c87ba-7522-4e95-bcb4-67b83f97528c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "substitute_ingredient"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5cb5f850-2c68-4dce-a4a0-457fc24dc86a",
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "substitute_equipment",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "substitute_equipment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "skip",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "882086e2-a968-404d-a66e-163f905b8e5b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "skip"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "update",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "69a84af9-7f0d-4b23-bd5f-967ade51a438"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "3c7756ce-46c9-4c16-825e-7bdae751fd6a",
+      "name": "Route by Operation",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -704,
+        1904
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "session_steps",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $json.session_id }}"
+            },
+            {
+              "fieldId": "order_index",
+              "fieldValue": "={{ $json.step_index }}"
+            },
+            {
+              "fieldId": "short_text",
+              "fieldValue": "={{ $json.short_text }}"
+            },
+            {
+              "fieldId": "detailed_description",
+              "fieldValue": "={{ $json.detailed_description }}"
+            },
+            {
+              "fieldId": "is_completed",
+              "fieldValue": false
+            },
+            {
+              "fieldId": "is_skipped",
+              "fieldValue": false
+            },
+            {
+              "fieldId": "agent_notes",
+              "fieldValue": "={{ $json.agent_notes || 'Added by AI agent' }}"
+            }
+          ]
+        }
+      },
+      "id": "24975159-ba40-4e0c-a28b-a4c137c73c8e",
+      "name": "Insert Step",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        1568
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "session_step_ingredients",
+        "filterType": "string",
+        "filterString": "=session_step_id=eq.{{ $json.step_id }}&placeholder_key=eq.{{ $json.placeholder_key }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "adjusted_amount",
+              "fieldValue": "={{ $json.adjusted_amount }}"
+            }
+          ]
+        }
+      },
+      "id": "aa69c595-267f-4e1b-befa-89cb07d464b2",
+      "name": "Adjust Quantity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        1760
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "session_step_ingredients",
+        "filterType": "string",
+        "filterString": "=session_step_id=eq.{{ $json.step_id }}&placeholder_key=eq.{{ $json.placeholder_key }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "ingredient_id",
+              "fieldValue": "={{ $json.ingredient_id }}"
+            },
+            {
+              "fieldId": "adjusted_amount",
+              "fieldValue": "={{ $json.adjusted_amount }}"
+            },
+            {
+              "fieldId": "is_substitution",
+              "fieldValue": "={{ $json.is_substitution }}"
+            },
+            {
+              "fieldId": "substitution_note",
+              "fieldValue": "={{ $json.substitution_note }}"
+            }
+          ]
+        }
+      },
+      "id": "fc09ece0-1ad2-48c6-86c3-d4407784a5f3",
+      "name": "Substitute Ingredient",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        1952
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "session_steps",
+        "filterType": "string",
+        "filterString": "=id=eq.{{ $json.step_id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_skipped",
+              "fieldValue": true
+            },
+            {
+              "fieldId": "agent_notes",
+              "fieldValue": "={{ $json.agent_notes || 'Skipped by AI agent' }}"
+            }
+          ]
+        }
+      },
+      "id": "627de202-aa6c-4bde-8d82-12f493e3a51b",
+      "name": "Skip Step",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        2432
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "session_steps",
+        "filterType": "string",
+        "filterString": "=id=eq.{{ $json.step_id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "short_text",
+              "fieldValue": "={{ $json.short_text }}"
+            },
+            {
+              "fieldId": "detailed_description",
+              "fieldValue": "={{ $json.detailed_description }}"
+            },
+            {
+              "fieldId": "agent_notes",
+              "fieldValue": "={{ $json.agent_notes || 'Updated by AI agent' }}"
+            }
+          ]
+        }
+      },
+      "id": "a58d2b9a-6b1c-4fe2-88b4-5c7c7143628e",
+      "name": "Update Step",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        2640
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract metadata from Parse & Split Operations to pass to Collect Results\nconst firstOp = $input.first().json;\n\nreturn [{\n  json: {\n    _metadata: true,\n    session_id: firstOp.session_id,\n    agent_message: firstOp._agentMessage,\n    time_impact_minutes: firstOp._timeImpact,\n    operations_count: firstOp._totalOps\n  }\n}];"
+      },
+      "id": "extract-metadata-node",
+      "name": "Extract Metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        2160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "merge-node",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        2064
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect results: Merge node appends metadata + operation results as separate items\nconst allInputs = $input.all();\n\nconsole.log('=== COLLECT RESULTS DEBUG ===');\nconsole.log('Total inputs:', allInputs.length);\nallInputs.forEach((item, i) => {\n  console.log(`Input ${i}:`, JSON.stringify(item.json, null, 2));\n});\n\n// Separate metadata from operation results\nconst metadataItem = allInputs.find(item => item.json._metadata === true);\nconst operationResults = allInputs.filter(item => item.json._metadata !== true);\n\nconsole.log('Metadata found:', !!metadataItem);\nconsole.log('Operation results count:', operationResults.length);\n\n// Extract metadata fields\nconst metadata = metadataItem?.json || {};\nconst sessionId = metadata.session_id;\nconst agentMessage = metadata.agent_message || \"I've adjusted the recipe.\";\nconst timeImpact = metadata.time_impact_minutes || 0;\nconst operationsCount = metadata.operations_count || operationResults.length;\n\n// Build operations_attempted from operation results\nconst operationsAttempted = operationResults.map(item => {\n  const data = item.json;\n  \n  // Infer operation type from fields present\n  let operation = 'unknown';\n  if (data.placeholder_key && data.adjusted_amount !== undefined) {\n    operation = data.is_substitution ? 'substitute_ingredient' : 'adjust_quantity';\n  } else if (data.equipment_id && data.is_substitution) {\n    operation = 'substitute_equipment';\n  } else if (data.short_text) {\n    operation = 'insert';\n  }\n  \n  return {\n    operation,\n    step_id: data.session_step_id || data.step_id,\n    placeholder_key: data.placeholder_key,\n    adjusted_amount: data.adjusted_amount,\n    ingredient_id: data.ingredient_id,\n    equipment_id: data.equipment_id,\n    short_text: data.short_text,\n    is_substitution: data.is_substitution || false,\n    substitution_note: data.substitution_note,\n    success: !data.error,\n    error: data.error || null\n  };\n});\n\nreturn [{\n  json: {\n    success: true,\n    session_id: sessionId,\n    operations_count: operationsCount,\n    agent_message: agentMessage,\n    requires_video_generation: operationsAttempted.some(op => op.operation === 'insert' || op.operation === 'update'),\n    time_impact_minutes: timeImpact,\n    operations_attempted: operationsAttempted,\n    errors: operationResults\n      .filter(item => item.json.error)\n      .map(item => ({\n        operation: item.json.operation,\n        step_id: item.json.session_step_id,\n        error: item.json.error\n      }))\n  }\n}];"
+      },
+      "id": "collect-results-node",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        1952
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "3c6b64fb-e3ea-491e-9bab-717d259e12df",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        1952
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "session_step_equipment",
+        "filterType": "string",
+        "filterString": "=session_step_id=eq.{{ $json.step_id }}&placeholder_key=eq.{{ $json.placeholder_key }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "equipment_id",
+              "fieldValue": "={{ $json.equipment_id }}"
+            },
+            {
+              "fieldId": "is_substitution",
+              "fieldValue": "={{ $json.is_substitution }}"
+            },
+            {
+              "fieldId": "substitution_note",
+              "fieldValue": "={{ $json.substitution_note }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        2192
+      ],
+      "id": "c073179a-1b50-44a0-b92a-462522fb0a56",
+      "name": "Substitute Equipment",
+      "credentials": {
+        "supabaseApi": {
+          "id": "WPgpcAt6giEEYLaT",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -1680,
+        2256
+      ],
+      "id": "ae3ce7f7-6704-4287-88e7-4c39c0883762",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "MStuuHKwYHb3kPOm",
+          "name": "Anthropic account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lookup Ingredients": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Equipment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Session Steps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Session Steps": {
+      "main": [
+        [
+          {
+            "node": "Prepare Session Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Session Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse & Split Operations",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Split Operations": {
+      "main": [
+        [
+          {
+            "node": "Route by Operation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Route by Operation": {
+      "main": [
+        [
+          {
+            "node": "Insert Step",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Adjust Quantity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Substitute Ingredient",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Substitute Equipment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Step",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Step",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Insert Step": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Adjust Quantity": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Substitute Ingredient": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Skip Step": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Update Step": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Substitute Equipment": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Extract Metadata": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Results": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "33333b98-b762-4435-94ed-d5b3fae479c3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4f6e920e6c4b8cd928b168e8fc018e44dd70f6f7e85ce7c0318e1f216577385"
+  },
+  "id": "ArV4O7PIi1Ws71cL",
+  "tags": [
+    {
+      "name": "voice-agent",
+      "id": "1jRcJ6VDKkdAY3jf",
+      "updatedAt": "2025-12-08T10:24:58.904Z",
+      "createdAt": "2025-12-08T10:24:58.904Z"
+    },
+    {
+      "name": "cooking",
+      "id": "94d5M9luHbMx0uKN",
+      "updatedAt": "2025-12-08T10:24:58.881Z",
+      "createdAt": "2025-12-08T10:24:58.881Z"
+    }
+  ]
+}

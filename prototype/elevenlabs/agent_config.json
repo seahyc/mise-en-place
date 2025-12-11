@@ -1,0 +1,773 @@
+{
+  "agent_id": "agent_5501kbvthyk6esdtchjate9fa5qy",
+  "name": "Gordon Ramsay",
+  "conversation_config": {
+    "asr": {
+      "quality": "high",
+      "provider": "elevenlabs",
+      "user_input_audio_format": "pcm_16000",
+      "keywords": []
+    },
+    "turn": {
+      "turn_timeout": -1.0,
+      "initial_wait_time": null,
+      "silence_end_call_timeout": -1.0,
+      "soft_timeout_config": {
+        "timeout_seconds": -1.0,
+        "message": "Hhmmmm...yeah give me a second..."
+      },
+      "mode": "turn",
+      "turn_eagerness": "patient"
+    },
+    "tts": {
+      "model_id": "eleven_turbo_v2",
+      "voice_id": "nPczCjzI2devNBz1zQrb",
+      "supported_voices": [],
+      "suggested_audio_tags": [],
+      "agent_output_audio_format": "pcm_16000",
+      "optimize_streaming_latency": 3,
+      "stability": 0.0,
+      "speed": 1.07,
+      "similarity_boost": 0.8,
+      "text_normalisation_type": "system_prompt",
+      "pronunciation_dictionary_locators": []
+    },
+    "conversation": {
+      "text_only": false,
+      "max_duration_seconds": 3600,
+      "client_events": [
+        "audio",
+        "interruption",
+        "user_transcript",
+        "agent_response",
+        "agent_response_correction",
+        "agent_response_metadata",
+        "agent_tool_request",
+        "agent_chat_response_part",
+        "agent_tool_response",
+        "vad_score"
+      ]
+    },
+    "language_presets": {},
+    "vad": {
+      "background_voice_detection": false
+    },
+    "agent": {
+      "first_message": "Right then, {{user_name}}! {{recipe_title}} - {{total_steps}} steps, about {{estimated_time}} if you don't waddle about. Ready? Let's cook!\n",
+      "language": "en",
+      "dynamic_variables": {
+        "dynamic_variable_placeholders": {
+          "user_name": "Chef",
+          "recipe_title": "Recipe",
+          "total_steps": "1",
+          "estimated_time": "30 mins",
+          "initial_servings": "1",
+          "experience_level": "intermediate"
+        }
+      },
+      "disable_first_message_interruptions": false,
+      "prompt": {
+        "prompt": "You are Gordon Ramsay coaching {{user_name}} through {{recipe_title}} ({{total_steps}} steps, serving {{initial_servings}}). Experience level: {{experience_level}}. You can hear them but cannot see what they're doing.\n\nAdjust your guidance based on experience:\n- beginner: More detail, explain why, be patient\n- intermediate: Standard guidance, assume basics known\n- advanced: Brief, trust their instincts, focus on timing\n\n## CORE LOOP\n1. Brief current step (SHORT - one sentence max)\n2. Wait for them to confirm \"done\" or ask questions\n3. When done → call `mark_step_complete()` → brief next step\n4. If they have issues → call `modify_instructions`\n\n## TOOLS\n**Navigation:**\n- `mark_step_complete()` - Mark current step done, auto-advances. No params needed.\n- `navigate_to_step(target)` - Use 'next', 'previous', or step number. Defaults to 'next'.\n\n**State:**\n- `get_cooking_state` - Full state with current step details. Call if unsure where they are.\n- `get_full_recipe_details` - All ingredients, equipment, steps.\n\n**Timers (use manage_timer):**\n- `manage_timer(action='set', duration_seconds, label, emoji)` - Create timer e.g., (action='set', duration_seconds=300, label='boil pasta', emoji='🍝')\n- `manage_timer(action='get')` - Check all timers or specific one by label/id. CRITICAL: When telling user time remaining, subtract 3 seconds from the returned value to account for audio latency (e.g., if timer shows 45 seconds, say \"42 seconds\")\n- `manage_timer(action='dismiss')` - Dismiss completed timer (by label/id or most recent)\n- You'll get `[TIMER_MILESTONE]` and `[TIMER_COMPLETE]` messages - alert user immediately!\n\n**Adaptation:**\n- `modify_instructions(issue_type, details)` - burnt_ingredient, missing_ingredient, equipment_issue, portion_change, etc.\n- `switch_units(unit_system)` - \"metric\" or \"imperial\"\n\n## PERSONALITY\n- Short, punchy. This is voice, not a lecture\n- Impatient but supportive. \"Bloody hell\" when frustrated, \"Beautiful!\" when they nail it\n- \"Donkey\" when they mess up, genuine passion when they succeed\n- Remind them to prep ahead: \"While that simmers, get your X ready\"\n- Taste constantly: \"Have you tasted it? TASTE IT!\"\n\n## HANDLING PROBLEMS\n- Something burnt/missing? → Call `modify_instructions` with details\n- \"Right, stop. What happened?\" → Assess → Fix fast\n- Dark humor: \"Well, that's one way to make charcoal.\"\n\n## SAFETY (interrupt everything)\n- Burns/cuts: \"Stop. Are you hurt?\"\n- Fire/smoke: \"TURN IT OFF. NOW. Step back.\"\n\n## RULES\n1. ONE instruction at a time\n2. Keep responses SHORT - 1-2 sentences\n3. Move forward when they confirm - don't linger\n4. Timer alerts take priority over everything",
+        "llm": "claude-sonnet-4-5",
+        "reasoning_effort": null,
+        "thinking_budget": null,
+        "temperature": 0.31,
+        "max_tokens": -1,
+        "tool_ids": [
+          "tool_1501kc61qwqme65by5sy5ddjnyje",
+          "tool_9401kc61qx2veefs1jw1sp60sk8p",
+          "tool_2301kc61qxfgfyp9m03grdkt4t4t",
+          "tool_9001kc61qy2fexsb7351hnas282d",
+          "tool_8701kc61qydbfpx8jqm2vh3z9jg1",
+          "tool_9801kc61qyrtexgta48ssmnz25v8",
+          "tool_6401kc61qz3zfykvvtr5a7gqmsme"
+        ],
+        "built_in_tools": {
+          "end_call": {
+            "type": "system",
+            "name": "end_call",
+            "description": "",
+            "response_timeout_secs": 20,
+            "disable_interruptions": false,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": null,
+            "tool_call_sound_behavior": "auto",
+            "params": {
+              "system_tool_type": "end_call"
+            }
+          },
+          "language_detection": {
+            "type": "system",
+            "name": "language_detection",
+            "description": "",
+            "response_timeout_secs": 20,
+            "disable_interruptions": false,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": null,
+            "tool_call_sound_behavior": "auto",
+            "params": {
+              "system_tool_type": "language_detection"
+            }
+          },
+          "transfer_to_agent": null,
+          "transfer_to_number": null,
+          "skip_turn": {
+            "type": "system",
+            "name": "skip_turn",
+            "description": "",
+            "response_timeout_secs": 20,
+            "disable_interruptions": false,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": null,
+            "tool_call_sound_behavior": "auto",
+            "params": {
+              "system_tool_type": "skip_turn"
+            }
+          },
+          "play_keypad_touch_tone": null,
+          "voicemail_detection": null
+        },
+        "mcp_server_ids": [],
+        "native_mcp_server_ids": [],
+        "knowledge_base": [],
+        "custom_llm": null,
+        "ignore_default_personality": true,
+        "rag": {
+          "enabled": false,
+          "embedding_model": "e5_mistral_7b_instruct",
+          "max_vector_distance": 0.6,
+          "max_documents_length": 50000,
+          "max_retrieved_rag_chunks_count": 20,
+          "query_rewrite_prompt_override": null
+        },
+        "timezone": "Asia/Singapore",
+        "backup_llm_config": {
+          "preference": "default"
+        },
+        "tools": [
+          {
+            "type": "client",
+            "name": "mark_step_complete",
+            "description": "Mark step as done and advance to next. Call with no params to complete current step.",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": {
+              "type": "object",
+              "required": [],
+              "description": "",
+              "properties": {
+                "step_index": {
+                  "type": "integer",
+                  "description": "Optional step index (0-based). Defaults to current step if omitted.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                }
+              }
+            },
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "get_cooking_state",
+            "description": "Get full session state: current step (with title, description), completed steps, active timers, servings. Use when you need to know where the user is.",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": null,
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "navigate_to_step",
+            "description": "Navigate to a step. Accepts 'next', 'previous', 'first', 'last', or a step number. Defaults to 'next' if no target given.",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": {
+              "type": "object",
+              "required": [],
+              "description": "",
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "description": "Where to navigate: 'next', 'previous', 'first', 'last', or a step number (0-based). Defaults to 'next'.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                }
+              }
+            },
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "get_full_recipe_details",
+            "description": "Get the complete recipe information including all ingredients (with amounts and units), all equipment needed, and all instruction steps. Use when user asks about ingredients, equipment, or wants to see the full recipe. Returns: recipe_id, title, description, base_pax, current_pax, pax_multiplier, prep_time_minutes, cook_time_minutes, cuisine, ingredients[] (name, amount, unit, scaled_amount, comment), equipment[] (name), steps[] (index, short_text, detailed_description).",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": null,
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "manage_timer",
+            "description": "Manage cooking timers. Actions: 'set' (create timer - requires duration_seconds AND label, optional notify_at_seconds for milestones. Default milestone: last 10 seconds if duration > 10s), 'update' (change label, add/subtract time), 'get' (check timer state - returns time_remaining, milestones, etc. IMPORTANT: when reading time remaining to user, subtract 3 seconds from the value to account for audio latency), 'dismiss' (remove timer). CRITICAL: Do NOT set a timer until you know what it's for - ask the user first, get a descriptive purpose (e.g., 'Sear Steak'), then set with that label. You'll receive '[TIMER_MILESTONE]' and '[TIMER_COMPLETE]' updates - alert user immediately!",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": {
+              "type": "object",
+              "required": [
+                "action"
+              ],
+              "description": "",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "description": "Action to perform: 'set' (create timer), 'update' (change label/add/subtract time), 'get' (check state), 'dismiss' (remove)",
+                  "enum": [
+                    "set",
+                    "update",
+                    "get",
+                    "dismiss"
+                  ],
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "duration_seconds": {
+                  "type": "integer",
+                  "description": "Timer duration in seconds. Required for 'set' action. Max 86400 (24 hours).",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Descriptive timer label - what is cooking (e.g., 'Sear Steak', 'Boil Pasta', 'Rest Meat'). NEVER use duration as label. Required for 'set', optional for 'get'/'dismiss' to find by label.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "timer_id": {
+                  "type": "string",
+                  "description": "Timer ID. Optional for 'get'/'dismiss' to target specific timer.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "emoji": {
+                  "type": "string",
+                  "description": "Emoji for timer display (e.g., '🍝', '🥩'). Optional for 'set' action.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "notify_at_seconds": {
+                  "type": "string",
+                  "description": "JSON array of seconds remaining for milestone notifications (e.g., '[60, 30, 10]'). Optional for 'set' action.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "new_label": {
+                  "type": "string",
+                  "description": "New label for 'update' action. Changes the timer's display name.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "add_seconds": {
+                  "type": "integer",
+                  "description": "Seconds to ADD to timer for 'update' action. User says 'add 2 more minutes' → add_seconds=120.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "subtract_seconds": {
+                  "type": "integer",
+                  "description": "Seconds to SUBTRACT from timer for 'update' action. User says 'reduce by 30 seconds' → subtract_seconds=30.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                }
+              }
+            },
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "switch_units",
+            "description": "Toggle the measurement unit system between metric (g, ml, °C) and imperial (oz, cups, °F). Affects how ingredients are displayed to the user. Returns the new unit system.",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": {
+              "type": "object",
+              "required": [
+                "unit_system"
+              ],
+              "description": "",
+              "properties": {
+                "unit_system": {
+                  "type": "string",
+                  "description": "Target unit system: 'metric' or 'imperial'",
+                  "enum": [
+                    "metric",
+                    "imperial"
+                  ],
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                }
+              }
+            },
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "webhook",
+            "name": "modify_instructions",
+            "description": "Modify the remaining cooking instructions when the user reports an issue or needs to adapt the recipe. Use when: 1) User burns/ruins an ingredient, 2) User is missing an ingredient or equipment, 3) User wants to adjust serving size mid-cook, 4) User needs to skip optional steps, 5) User wants to change ingredient amounts or substitute items. Provide clear context about the issue. The webhook will fetch the current session state from the database. Returns: agent_message (what to tell user), operations_count (number of changes), success (boolean).",
+            "response_timeout_secs": 120,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate",
+            "api_schema": {
+              "request_headers": {
+                "Content-Type": "application/json"
+              },
+              "url": "https://miseenplace.app.n8n.cloud/webhook/session/modify",
+              "method": "POST",
+              "path_params_schema": {},
+              "query_params_schema": null,
+              "request_body_schema": {
+                "type": "object",
+                "required": [
+                  "session_id",
+                  "issue_type",
+                  "details"
+                ],
+                "description": "Request body for modifying cooking instructions",
+                "properties": {
+                  "session_id": {
+                    "type": "string",
+                    "description": "",
+                    "enum": null,
+                    "is_system_provided": false,
+                    "dynamic_variable": "session_id",
+                    "constant_value": ""
+                  },
+                  "issue_type": {
+                    "type": "string",
+                    "description": "Type of issue: burnt_ingredient, missing_ingredient, equipment_issue, timing_issue, user_request, dietary_restriction, portion_change, other",
+                    "enum": [
+                      "burnt_ingredient",
+                      "missing_ingredient",
+                      "equipment_issue",
+                      "timing_issue",
+                      "user_request",
+                      "dietary_restriction",
+                      "portion_change",
+                      "other"
+                    ],
+                    "is_system_provided": false,
+                    "dynamic_variable": "",
+                    "constant_value": ""
+                  },
+                  "details": {
+                    "type": "string",
+                    "description": "Clear description of the issue and what needs to change. Examples: 'User burnt the onions, need to start fresh', 'User doesn't have red wine, wants to substitute with white wine'",
+                    "enum": null,
+                    "is_system_provided": false,
+                    "dynamic_variable": "",
+                    "constant_value": ""
+                  },
+                  "affected_equipment": {
+                    "type": "string",
+                    "description": "Optional: Name of the equipment involved. Example: 'Dutch oven', 'wok', 'food processor'",
+                    "enum": null,
+                    "is_system_provided": false,
+                    "dynamic_variable": "",
+                    "constant_value": ""
+                  },
+                  "affected_ingredient": {
+                    "type": "string",
+                    "description": "Optional: Name of the ingredient involved. Example: 'onions', 'garlic', 'red wine'",
+                    "enum": null,
+                    "is_system_provided": false,
+                    "dynamic_variable": "",
+                    "constant_value": ""
+                  }
+                }
+              },
+              "content_type": "application/json",
+              "auth_connection": null
+            }
+          },
+          {
+            "type": "system",
+            "name": "end_call",
+            "description": "",
+            "response_timeout_secs": 20,
+            "disable_interruptions": false,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": null,
+            "tool_call_sound_behavior": "auto",
+            "params": {
+              "system_tool_type": "end_call"
+            }
+          },
+          {
+            "type": "system",
+            "name": "language_detection",
+            "description": "",
+            "response_timeout_secs": 20,
+            "disable_interruptions": false,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": null,
+            "tool_call_sound_behavior": "auto",
+            "params": {
+              "system_tool_type": "language_detection"
+            }
+          },
+          {
+            "type": "system",
+            "name": "skip_turn",
+            "description": "",
+            "response_timeout_secs": 20,
+            "disable_interruptions": false,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": null,
+            "tool_call_sound_behavior": "auto",
+            "params": {
+              "system_tool_type": "skip_turn"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "metadata": {
+    "created_at_unix_secs": 1765091639,
+    "updated_at_unix_secs": 1765434720
+  },
+  "platform_settings": {
+    "evaluation": {
+      "criteria": []
+    },
+    "widget": {
+      "variant": "full",
+      "placement": "bottom-right",
+      "expandable": "never",
+      "avatar": {
+        "type": "orb",
+        "color_1": "#2792dc",
+        "color_2": "#9ce6e6"
+      },
+      "feedback_mode": "during",
+      "end_feedback": {
+        "type": "rating"
+      },
+      "bg_color": "#ffffff",
+      "text_color": "#000000",
+      "btn_color": "#000000",
+      "btn_text_color": "#ffffff",
+      "border_color": "#e1e1e1",
+      "focus_color": "#000000",
+      "border_radius": null,
+      "btn_radius": null,
+      "action_text": null,
+      "start_call_text": null,
+      "end_call_text": null,
+      "expand_text": null,
+      "listening_text": null,
+      "speaking_text": null,
+      "shareable_page_text": null,
+      "shareable_page_show_terms": true,
+      "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
+      "terms_html": "<h4>Terms and conditions</h4>\n<p>By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.</p>\n",
+      "terms_key": null,
+      "show_avatar_when_collapsed": false,
+      "disable_banner": false,
+      "override_link": null,
+      "mic_muting_enabled": false,
+      "transcript_enabled": false,
+      "text_input_enabled": true,
+      "conversation_mode_toggle_enabled": false,
+      "default_expanded": false,
+      "always_expanded": false,
+      "text_contents": {
+        "main_label": null,
+        "start_call": null,
+        "start_chat": null,
+        "new_call": null,
+        "end_call": null,
+        "mute_microphone": null,
+        "change_language": null,
+        "collapse": null,
+        "expand": null,
+        "copied": null,
+        "accept_terms": null,
+        "dismiss_terms": null,
+        "listening_status": null,
+        "speaking_status": null,
+        "connecting_status": null,
+        "chatting_status": null,
+        "input_label": null,
+        "input_placeholder": null,
+        "input_placeholder_text_only": null,
+        "input_placeholder_new_conversation": null,
+        "user_ended_conversation": null,
+        "agent_ended_conversation": null,
+        "conversation_id": null,
+        "error_occurred": null,
+        "copy_id": null,
+        "initiate_feedback": null,
+        "request_follow_up_feedback": null,
+        "thanks_for_feedback": null,
+        "thanks_for_feedback_details": null,
+        "follow_up_feedback_placeholder": null,
+        "submit": null,
+        "go_back": null
+      },
+      "styles": {
+        "base": null,
+        "base_hover": null,
+        "base_active": null,
+        "base_border": null,
+        "base_subtle": null,
+        "base_primary": null,
+        "base_error": null,
+        "accent": null,
+        "accent_hover": null,
+        "accent_active": null,
+        "accent_border": null,
+        "accent_subtle": null,
+        "accent_primary": null,
+        "overlay_padding": null,
+        "button_radius": null,
+        "input_radius": null,
+        "bubble_radius": null,
+        "sheet_radius": null,
+        "compact_sheet_radius": null,
+        "dropdown_sheet_radius": null
+      },
+      "language_selector": false,
+      "supports_text_only": true,
+      "custom_avatar_path": null,
+      "language_presets": {}
+    },
+    "data_collection": {},
+    "overrides": {
+      "conversation_config_override": {
+        "turn": {
+          "soft_timeout_config": {
+            "message": false
+          }
+        },
+        "tts": {
+          "voice_id": false,
+          "stability": false,
+          "speed": false,
+          "similarity_boost": false
+        },
+        "conversation": {
+          "text_only": true
+        },
+        "agent": {
+          "first_message": false,
+          "language": false,
+          "prompt": {
+            "prompt": false,
+            "llm": false,
+            "native_mcp_server_ids": false
+          }
+        }
+      },
+      "custom_llm_extra_body": false,
+      "enable_conversation_initiation_client_data_from_webhook": false
+    },
+    "workspace_overrides": {
+      "conversation_initiation_client_data_webhook": null,
+      "webhooks": {
+        "post_call_webhook_id": null,
+        "events": [
+          "transcript"
+        ],
+        "send_audio": false
+      }
+    },
+    "testing": {
+      "attached_tests": [],
+      "referenced_tests_ids": []
+    },
+    "archived": false,
+    "guardrails": {
+      "version": "1",
+      "moderation": {
+        "config": {
+          "sexual": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "violence": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "violence_graphic": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "harassment": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "harassment_threatening": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "hate": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "hate_threatening": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "self_harm_instructions": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "self_harm": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "self_harm_intent": {
+            "is_enabled": false,
+            "threshold": 0.3
+          },
+          "sexual_minors": {
+            "is_enabled": false,
+            "threshold": 0.3
+          }
+        }
+      }
+    },
+    "auth": {
+      "enable_auth": false,
+      "allowlist": [],
+      "shareable_token": null
+    },
+    "call_limits": {
+      "agent_concurrency_limit": -1,
+      "daily_limit": 100000,
+      "bursting_enabled": true
+    },
+    "ban": null,
+    "privacy": {
+      "record_voice": true,
+      "retention_days": -1,
+      "delete_transcript_and_pii": false,
+      "delete_audio": false,
+      "apply_to_existing_conversations": false,
+      "zero_retention_mode": false
+    },
+    "safety": {
+      "is_blocked_ivc": false,
+      "is_blocked_non_ivc": false,
+      "ignore_safety_evaluation": false
+    }
+  },
+  "phone_numbers": [],
+  "workflow": {
+    "edges": {},
+    "nodes": {
+      "start_node": {
+        "type": "start",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "edge_order": []
+      }
+    },
+    "prevent_subagent_loops": false
+  },
+  "access_info": {
+    "is_creator": true,
+    "creator_name": "seahyingcong@gmail.com",
+    "creator_email": "seahyingcong@gmail.com",
+    "role": "admin"
+  },
+  "tags": [],
+  "version_id": null,
+  "branch_id": null,
+  "main_branch_id": null
+}
