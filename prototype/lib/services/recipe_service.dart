@@ -188,4 +188,168 @@ class RecipeService {
     }
   }
 
+  /// Create a minimal recipe entry and return its generated ID.
+  /// Inserts only top-level recipe fields; ingredient/equipment steps are optional.
+  Future<String?> createRecipeBasic({
+    required String title,
+    String description = '',
+    String mainImageUrl = '',
+    String sourceLink = '',
+    int prepTimeMinutes = 0,
+    int cookTimeMinutes = 0,
+    int basePax = 1,
+    String cuisine = 'other',
+  }) async {
+    try {
+      final payload = {
+        'title': title,
+        'description': description,
+        'main_image_url': mainImageUrl,
+        'source_link': sourceLink,
+        'prep_time_minutes': prepTimeMinutes,
+        'cook_time_minutes': cookTimeMinutes,
+        'base_pax': basePax,
+        'cuisine': cuisine,
+      };
+
+      debugPrint('[RecipeService] createRecipeBasic payload=$payload');
+
+      final response = await supabase
+          .from('recipes')
+          .insert(payload)
+          .select('id')
+          .single();
+
+      final id = response['id']?.toString();
+      debugPrint('[RecipeService] created recipe id=$id response=$response');
+      if (id == null || id.isEmpty) {
+        throw Exception('Supabase insert returned no id. Response: $response');
+      }
+      return id;
+    } catch (e, st) {
+      debugPrint("[RecipeService] Error creating recipe: $e\n$st");
+      return null;
+    }
+  }
+
+  Future<String?> createIngredientMaster({
+    required String name,
+    String? defaultImageUrl,
+  }) async {
+    try {
+      final payload = {
+        'name': name,
+        if (defaultImageUrl != null && defaultImageUrl.isNotEmpty) 'default_image_url': defaultImageUrl,
+      };
+      debugPrint('[RecipeService] createIngredientMaster payload=$payload');
+      final response = await supabase.from('ingredient_master').insert(payload).select('id').single();
+      final id = response['id']?.toString();
+      debugPrint('[RecipeService] created ingredient_master id=$id response=$response');
+      if (id == null || id.isEmpty) throw Exception('No id returned for ingredient_master');
+      return id;
+    } catch (e, st) {
+      debugPrint('[RecipeService] Error creating ingredient_master: $e\n$st');
+      return null;
+    }
+  }
+
+  Future<String?> createEquipmentMaster({
+    required String name,
+    String? iconUrl,
+  }) async {
+    try {
+      final payload = {
+        'name': name,
+        if (iconUrl != null && iconUrl.isNotEmpty) 'icon_url': iconUrl,
+      };
+      debugPrint('[RecipeService] createEquipmentMaster payload=$payload');
+      final response = await supabase.from('equipment_master').insert(payload).select('id').single();
+      final id = response['id']?.toString();
+      debugPrint('[RecipeService] created equipment_master id=$id response=$response');
+      if (id == null || id.isEmpty) throw Exception('No id returned for equipment_master');
+      return id;
+    } catch (e, st) {
+      debugPrint('[RecipeService] Error creating equipment_master: $e\n$st');
+      return null;
+    }
+  }
+
+  Future<String?> addRecipeIngredient({
+    required String recipeId,
+    required String ingredientMasterId,
+    double? amount,
+    String? unit,
+    String? displayString,
+    String? comment,
+  }) async {
+    try {
+      final payload = {
+        'recipe_id': recipeId,
+        'ingredient_id': ingredientMasterId,
+        if (amount != null) 'amount': amount,
+        if (unit != null && unit.isNotEmpty) 'unit': unit,
+        if (displayString != null && displayString.isNotEmpty) 'display_string': displayString,
+        if (comment != null && comment.isNotEmpty) 'comment': comment,
+      };
+      debugPrint('[RecipeService] addRecipeIngredient payload=$payload');
+      final response = await supabase.from('recipe_ingredients').insert(payload).select('id').single();
+      final id = response['id']?.toString();
+      debugPrint('[RecipeService] created recipe_ingredient id=$id response=$response');
+      if (id == null || id.isEmpty) throw Exception('No id returned for recipe_ingredients');
+      return id;
+    } catch (e, st) {
+      debugPrint('[RecipeService] Error adding recipe_ingredient: $e\n$st');
+      return null;
+    }
+  }
+
+  Future<String?> addRecipeEquipment({
+    required String recipeId,
+    required String equipmentMasterId,
+    String? placeholderKey,
+  }) async {
+    try {
+      final payload = {
+        'recipe_id': recipeId,
+        'equipment_id': equipmentMasterId,
+        if (placeholderKey != null && placeholderKey.isNotEmpty) 'placeholder_key': placeholderKey,
+      };
+      debugPrint('[RecipeService] addRecipeEquipment payload=$payload');
+      final response = await supabase.from('recipe_equipment').insert(payload).select('id').single();
+      final id = response['id']?.toString();
+      debugPrint('[RecipeService] created recipe_equipment id=$id response=$response');
+      if (id == null || id.isEmpty) throw Exception('No id returned for recipe_equipment');
+      return id;
+    } catch (e, st) {
+      debugPrint('[RecipeService] Error adding recipe_equipment: $e\n$st');
+      return null;
+    }
+  }
+
+  Future<String?> addInstructionStep({
+    required String recipeId,
+    required int orderIndex,
+    required String shortText,
+    String? detailedDescription,
+    String? mediaUrl,
+  }) async {
+    try {
+      final payload = {
+        'recipe_id': recipeId,
+        'order_index': orderIndex,
+        'short_text': shortText,
+        if (detailedDescription != null && detailedDescription.isNotEmpty) 'detailed_description': detailedDescription,
+        if (mediaUrl != null && mediaUrl.isNotEmpty) 'media_url': mediaUrl,
+      };
+      debugPrint('[RecipeService] addInstructionStep payload=$payload');
+      final response = await supabase.from('instruction_steps').insert(payload).select('id').single();
+      final id = response['id']?.toString();
+      debugPrint('[RecipeService] created instruction_step id=$id response=$response');
+      if (id == null || id.isEmpty) throw Exception('No id returned for instruction_steps');
+      return id;
+    } catch (e, st) {
+      debugPrint('[RecipeService] Error adding instruction_step: $e\n$st');
+      return null;
+    }
+  }
 }
