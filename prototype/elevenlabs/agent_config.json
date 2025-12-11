@@ -1,5 +1,5 @@
 {
-  "agent_id": "agent_5501kbvthyk6esdtchjate9fa5qy",
+  "agent_id": "agent_7501kc6hnyzfe2nraabtajn6vq17",
   "name": "Gordon Ramsay",
   "conversation_config": {
     "asr": {
@@ -74,13 +74,13 @@
         "temperature": 0.31,
         "max_tokens": -1,
         "tool_ids": [
-          "tool_1501kc61qwqme65by5sy5ddjnyje",
-          "tool_9401kc61qx2veefs1jw1sp60sk8p",
-          "tool_2301kc61qxfgfyp9m03grdkt4t4t",
-          "tool_9001kc61qy2fexsb7351hnas282d",
-          "tool_8701kc61qydbfpx8jqm2vh3z9jg1",
-          "tool_9801kc61qyrtexgta48ssmnz25v8",
-          "tool_6401kc61qz3zfykvvtr5a7gqmsme"
+          "tool_5801kc6jkf7hfp79rdy5z5nkd50x",
+          "tool_3801kc6jkfnzfd8aqd100exfpv77",
+          "tool_4301kc6jkg4ge0fvza26t765kxcb",
+          "tool_8101kc6jkgmtergr56qzhksjsxps",
+          "tool_4001kc6jkh42eeptf1cx16ask2ee",
+          "tool_4801kc6jkkx5f2795w9v36q5xkzp",
+          "tool_8401kc6jkmbrffnancqsqtkg8cs3"
         ],
         "built_in_tools": {
           "end_call": {
@@ -181,23 +181,6 @@
           },
           {
             "type": "client",
-            "name": "get_cooking_state",
-            "description": "Get full session state: current step (with title, description), completed steps, active timers, servings. Use when you need to know where the user is.",
-            "response_timeout_secs": 20,
-            "disable_interruptions": true,
-            "force_pre_tool_speech": false,
-            "assignments": [],
-            "tool_call_sound": "typing",
-            "tool_call_sound_behavior": "auto",
-            "parameters": null,
-            "expects_response": true,
-            "dynamic_variables": {
-              "dynamic_variable_placeholders": {}
-            },
-            "execution_mode": "immediate"
-          },
-          {
-            "type": "client",
             "name": "navigate_to_step",
             "description": "Navigate to a step. Accepts 'next', 'previous', 'first', 'last', or a step number. Defaults to 'next' if no target given.",
             "response_timeout_secs": 20,
@@ -215,161 +198,6 @@
                   "type": "string",
                   "description": "Where to navigate: 'next', 'previous', 'first', 'last', or a step number (0-based). Defaults to 'next'.",
                   "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                }
-              }
-            },
-            "expects_response": true,
-            "dynamic_variables": {
-              "dynamic_variable_placeholders": {}
-            },
-            "execution_mode": "immediate"
-          },
-          {
-            "type": "client",
-            "name": "get_full_recipe_details",
-            "description": "Get the complete recipe information including all ingredients (with amounts and units), all equipment needed, and all instruction steps. Use when user asks about ingredients, equipment, or wants to see the full recipe. Returns: recipe_id, title, description, base_pax, current_pax, pax_multiplier, prep_time_minutes, cook_time_minutes, cuisine, ingredients[] (name, amount, unit, scaled_amount, comment), equipment[] (name), steps[] (index, short_text, detailed_description).",
-            "response_timeout_secs": 20,
-            "disable_interruptions": true,
-            "force_pre_tool_speech": false,
-            "assignments": [],
-            "tool_call_sound": "typing",
-            "tool_call_sound_behavior": "auto",
-            "parameters": null,
-            "expects_response": true,
-            "dynamic_variables": {
-              "dynamic_variable_placeholders": {}
-            },
-            "execution_mode": "immediate"
-          },
-          {
-            "type": "client",
-            "name": "manage_timer",
-            "description": "Manage cooking timers. Actions: 'set' (create timer - requires duration_seconds AND label, optional notify_at_seconds for milestones. Default milestone: last 10 seconds if duration > 10s), 'update' (change label, add/subtract time), 'get' (check timer state - returns time_remaining, milestones, etc. IMPORTANT: when reading time remaining to user, subtract 3 seconds from the value to account for audio latency), 'dismiss' (remove timer). CRITICAL: Do NOT set a timer until you know what it's for - ask the user first, get a descriptive purpose (e.g., 'Sear Steak'), then set with that label. You'll receive '[TIMER_MILESTONE]' and '[TIMER_COMPLETE]' updates - alert user immediately!",
-            "response_timeout_secs": 20,
-            "disable_interruptions": true,
-            "force_pre_tool_speech": false,
-            "assignments": [],
-            "tool_call_sound": "typing",
-            "tool_call_sound_behavior": "auto",
-            "parameters": {
-              "type": "object",
-              "required": [
-                "action"
-              ],
-              "description": "",
-              "properties": {
-                "action": {
-                  "type": "string",
-                  "description": "Action to perform: 'set' (create timer), 'update' (change label/add/subtract time), 'get' (check state), 'dismiss' (remove)",
-                  "enum": [
-                    "set",
-                    "update",
-                    "get",
-                    "dismiss"
-                  ],
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "duration_seconds": {
-                  "type": "integer",
-                  "description": "Timer duration in seconds. Required for 'set' action. Max 86400 (24 hours).",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "label": {
-                  "type": "string",
-                  "description": "Descriptive timer label - what is cooking (e.g., 'Sear Steak', 'Boil Pasta', 'Rest Meat'). NEVER use duration as label. Required for 'set', optional for 'get'/'dismiss' to find by label.",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "timer_id": {
-                  "type": "string",
-                  "description": "Timer ID. Optional for 'get'/'dismiss' to target specific timer.",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "emoji": {
-                  "type": "string",
-                  "description": "Emoji for timer display (e.g., '🍝', '🥩'). Optional for 'set' action.",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "notify_at_seconds": {
-                  "type": "string",
-                  "description": "JSON array of seconds remaining for milestone notifications (e.g., '[60, 30, 10]'). Optional for 'set' action.",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "new_label": {
-                  "type": "string",
-                  "description": "New label for 'update' action. Changes the timer's display name.",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "add_seconds": {
-                  "type": "integer",
-                  "description": "Seconds to ADD to timer for 'update' action. User says 'add 2 more minutes' → add_seconds=120.",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                },
-                "subtract_seconds": {
-                  "type": "integer",
-                  "description": "Seconds to SUBTRACT from timer for 'update' action. User says 'reduce by 30 seconds' → subtract_seconds=30.",
-                  "enum": null,
-                  "is_system_provided": false,
-                  "dynamic_variable": "",
-                  "constant_value": ""
-                }
-              }
-            },
-            "expects_response": true,
-            "dynamic_variables": {
-              "dynamic_variable_placeholders": {}
-            },
-            "execution_mode": "immediate"
-          },
-          {
-            "type": "client",
-            "name": "switch_units",
-            "description": "Toggle the measurement unit system between metric (g, ml, °C) and imperial (oz, cups, °F). Affects how ingredients are displayed to the user. Returns the new unit system.",
-            "response_timeout_secs": 20,
-            "disable_interruptions": true,
-            "force_pre_tool_speech": false,
-            "assignments": [],
-            "tool_call_sound": "typing",
-            "tool_call_sound_behavior": "auto",
-            "parameters": {
-              "type": "object",
-              "required": [
-                "unit_system"
-              ],
-              "description": "",
-              "properties": {
-                "unit_system": {
-                  "type": "string",
-                  "description": "Target unit system: 'metric' or 'imperial'",
-                  "enum": [
-                    "metric",
-                    "imperial"
-                  ],
                   "is_system_provided": false,
                   "dynamic_variable": "",
                   "constant_value": ""
@@ -469,6 +297,178 @@
             }
           },
           {
+            "type": "client",
+            "name": "manage_timer",
+            "description": "Manage cooking timers. Actions: 'set' (create timer - requires duration_seconds AND label, optional notify_at_seconds for milestones. Default milestone: last 10 seconds if duration > 10s), 'update' (change label, add/subtract time), 'get' (check timer state - returns time_remaining, milestones, etc. IMPORTANT: when reading time remaining to user, subtract 3 seconds from the value to account for audio latency), 'dismiss' (remove timer). CRITICAL: Do NOT set a timer until you know what it's for - ask the user first, get a descriptive purpose (e.g., 'Sear Steak'), then set with that label. You'll receive '[TIMER_MILESTONE]' and '[TIMER_COMPLETE]' updates - alert user immediately!",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": {
+              "type": "object",
+              "required": [
+                "action"
+              ],
+              "description": "",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "description": "Descriptive timer label - what is cooking (e.g., 'Sear Steak', 'Boil Pasta', 'Rest Meat'). NEVER use duration as label. Required for 'set', optional for 'get'/'dismiss' to find by label.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "subtract_seconds": {
+                  "type": "integer",
+                  "description": "Seconds to SUBTRACT from timer for 'update' action. User says 'reduce by 30 seconds' → subtract_seconds=30.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "add_seconds": {
+                  "type": "integer",
+                  "description": "Seconds to ADD to timer for 'update' action. User says 'add 2 more minutes' → add_seconds=120.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "new_label": {
+                  "type": "string",
+                  "description": "New label for 'update' action. Changes the timer's display name.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "duration_seconds": {
+                  "type": "integer",
+                  "description": "Timer duration in seconds. Required for 'set' action. Max 86400 (24 hours).",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "emoji": {
+                  "type": "string",
+                  "description": "Emoji for timer display (e.g., '🍝', '🥩'). Optional for 'set' action.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "timer_id": {
+                  "type": "string",
+                  "description": "Timer ID. Optional for 'get'/'dismiss' to target specific timer.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "notify_at_seconds": {
+                  "type": "string",
+                  "description": "JSON array of seconds remaining for milestone notifications (e.g., '[60, 30, 10]'). Optional for 'set' action.",
+                  "enum": null,
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                },
+                "action": {
+                  "type": "string",
+                  "description": "Action to perform: 'set' (create timer), 'update' (change label/add/subtract time), 'get' (check state), 'dismiss' (remove)",
+                  "enum": [
+                    "set",
+                    "update",
+                    "get",
+                    "dismiss"
+                  ],
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                }
+              }
+            },
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "get_full_recipe_details",
+            "description": "Get the complete recipe information including all ingredients (with amounts and units), all equipment needed, and all instruction steps. Use when user asks about ingredients, equipment, or wants to see the full recipe. Returns: recipe_id, title, description, base_pax, current_pax, pax_multiplier, prep_time_minutes, cook_time_minutes, cuisine, ingredients[] (name, amount, unit, scaled_amount, comment), equipment[] (name), steps[] (index, short_text, detailed_description).",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": null,
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "get_cooking_state",
+            "description": "Get full session state: current step (with title, description), completed steps, active timers, servings. Use when you need to know where the user is.",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": null,
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
+            "type": "client",
+            "name": "switch_units",
+            "description": "Toggle the measurement unit system between metric (g, ml, °C) and imperial (oz, cups, °F). Affects how ingredients are displayed to the user. Returns the new unit system.",
+            "response_timeout_secs": 20,
+            "disable_interruptions": true,
+            "force_pre_tool_speech": false,
+            "assignments": [],
+            "tool_call_sound": "typing",
+            "tool_call_sound_behavior": "auto",
+            "parameters": {
+              "type": "object",
+              "required": [
+                "unit_system"
+              ],
+              "description": "",
+              "properties": {
+                "unit_system": {
+                  "type": "string",
+                  "description": "Target unit system: 'metric' or 'imperial'",
+                  "enum": [
+                    "metric",
+                    "imperial"
+                  ],
+                  "is_system_provided": false,
+                  "dynamic_variable": "",
+                  "constant_value": ""
+                }
+              }
+            },
+            "expects_response": true,
+            "dynamic_variables": {
+              "dynamic_variable_placeholders": {}
+            },
+            "execution_mode": "immediate"
+          },
+          {
             "type": "system",
             "name": "end_call",
             "description": "",
@@ -515,8 +515,8 @@
     }
   },
   "metadata": {
-    "created_at_unix_secs": 1765091639,
-    "updated_at_unix_secs": 1765434720
+    "created_at_unix_secs": 1765451432,
+    "updated_at_unix_secs": 1765452404
   },
   "platform_settings": {
     "evaluation": {
@@ -762,8 +762,8 @@
   },
   "access_info": {
     "is_creator": true,
-    "creator_name": "seahyingcong@gmail.com",
-    "creator_email": "seahyingcong@gmail.com",
+    "creator_name": "Ying Cong Seah",
+    "creator_email": "yingcong@glints.com",
     "role": "admin"
   },
   "tags": [],

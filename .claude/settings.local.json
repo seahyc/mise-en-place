@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git init:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh repo create:*)",
+      "Bash(ELEVENLABS_API_KEY=sk_cb8ecd31ead13f79fbe1905323c16d10b4a47b2189538eb5 ELEVENLABS_AGENT_ID=agent_5501kbvthyk6esdtchjate9fa5qy curl -s -X GET \"https://api.elevenlabs.io/v1/convai/agents/$ELEVENLABS_AGENT_ID\" -H \"xi-api-key: $ELEVENLABS_API_KEY\")",
+      "Bash(curl:*)",
+      "Bash(./push_agent.sh)",
+      "Bash(cat:*)",
+      "Bash(pbcopy:*)",
+      "Bash(gh repo view:*)"
+    ]
+  }
+}
