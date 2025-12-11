@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:elevenlabs_agents/elevenlabs_agents.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 import '../services/auth_service.dart';
@@ -15,6 +18,10 @@ class RecipeListScreen extends StatefulWidget {
 
 class _RecipeListScreenState extends State<RecipeListScreen> {
   late Future<List<Recipe>> _recipesFuture;
+  bool _isVoiceListening = false;
+  bool _isVoiceConnecting = false;
+  ConversationClient? _voiceClient;
+  String _voiceStatus = 'Idle';
 
   // Watercolor aesthetic colors
   final Color _paperColor = const Color(0xFFFAFAF5); // Warm paper white
@@ -29,81 +36,299 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   }
 
   @override
+  void dispose() {
+    _voiceClient?.endSession();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _paperColor, 
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            backgroundColor: _paperColor,
-            expandedHeight: 180.0,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'What do you want to cook?',
-                style: GoogleFonts.playfairDisplay(
-                  color: _textCharcoal,
-                  fontSize: 28, // Slightly smaller to fit better
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  fontStyle: FontStyle.italic,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                backgroundColor: _paperColor,
+                expandedHeight: 180.0,
+                floating: false,
+                pinned: true,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'What do you want to cook?',
+                    style: GoogleFonts.playfairDisplay(
+                      color: _textCharcoal,
+                      fontSize: 28, // Slightly smaller to fit better
+                      fontWeight: FontWeight.w700,
+                      height: 1.1,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  background: Container(
+                    color: _paperColor,
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                actions: const [
+                  Padding(
+                    padding: EdgeInsets.only(right: 20.0),
+                    child: _UserProfileButton(),
+                  ),
+                ],
               ),
-              background: Container(
-                color: _paperColor,
+              
+              FutureBuilder<List<Recipe>>(
+                future: _recipesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
+                  } else if (snapshot.hasError) {
+                     return SliverFillRemaining(child: Center(child: Text("Error: ${snapshot.error}")));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                     return const SliverFillRemaining(child: Center(child: Text("No recipes found.")));
+                  }
+
+                  final recipes = snapshot.data!;
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 400, // Responsive
+                        childAspectRatio: 0.82, // Slightly taller for elegance
+                        crossAxisSpacing: 24,
+                        mainAxisSpacing: 32, // More vertical breathing room
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final recipe = recipes[index];
+                          return _RecipeCard(
+                            recipe: recipe, 
+                            tagsColor: index % 2 == 0 ? _watercolorOrange : _watercolorBlue
+                          );
+                        },
+                        childCount: recipes.length,
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-            actions: const [
-              Padding(
-                padding: EdgeInsets.only(right: 20.0),
-                child: _UserProfileButton(),
-              ),
+              
+              const SliverPadding(padding: EdgeInsets.only(bottom: 140)),
             ],
           ),
-          
-          FutureBuilder<List<Recipe>>(
-            future: _recipesFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
-              } else if (snapshot.hasError) {
-                 return SliverFillRemaining(child: Center(child: Text("Error: ${snapshot.error}")));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                 return const SliverFillRemaining(child: Center(child: Text("No recipes found.")));
-              }
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: _buildRecipeVoicePanel(),
+          ),
+        ],
+      ),
+    );
+  }
 
-              final recipes = snapshot.data!;
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 400, // Responsive
-                    childAspectRatio: 0.82, // Slightly taller for elegance
-                    crossAxisSpacing: 24,
-                    mainAxisSpacing: 32, // More vertical breathing room
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final recipe = recipes[index];
-                      return _RecipeCard(
-                        recipe: recipe, 
-                        tagsColor: index % 2 == 0 ? _watercolorOrange : _watercolorBlue
-                      );
-                    },
-                    childCount: recipes.length,
+  Widget _buildRecipeVoicePanel() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Recipe agent',
+                  style: GoogleFonts.playfairDisplay(
+                    color: _textCharcoal,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              );
-            },
+                const SizedBox(height: 4),
+                Text(
+                  'Ask for ideas or generate a new recipe with your voice.',
+                  style: GoogleFonts.lato(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-          
-          const SliverPadding(padding: EdgeInsets.only(bottom: 60)),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: _onVoiceTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _isVoiceListening
+                      ? [const Color(0xFF64B5F6), const Color(0xFF1976D2)]
+                      : [Colors.black.withValues(alpha: 0.07), Colors.black.withValues(alpha: 0.02)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _isVoiceListening ? const Color(0xFF1976D2) : Colors.black.withValues(alpha: 0.08),
+                  width: 1.2,
+                ),
+                boxShadow: _isVoiceListening
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF1976D2).withValues(alpha: 0.25),
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
+                        ),
+                      ]
+                    : [],
+              ),
+              child: Icon(
+                _isVoiceListening ? Icons.mic : Icons.mic_none,
+                color: _isVoiceListening ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  void _onVoiceTap() {
+    if (_isVoiceListening) {
+      _stopVoice();
+    } else {
+      _startVoice();
+    }
+  }
+
+  Future<void> _startVoice() async {
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Microphone permission needed for voice input'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final agentId = dotenv.env['ELEVENLABS_AGENT_ID'] ?? '';
+    if (agentId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ELEVENLABS_AGENT_ID missing in .env'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isVoiceConnecting = true;
+      _voiceStatus = 'Connecting...';
+    });
+
+    _voiceClient ??= ConversationClient(
+      callbacks: ConversationCallbacks(
+        onConnect: ({required conversationId}) {
+          setState(() {
+            _isVoiceListening = true;
+            _isVoiceConnecting = false;
+            _voiceStatus = 'Listening';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Voice connected — start speaking'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
+        onDisconnect: (details) {
+          if (!mounted) return;
+          setState(() {
+            _isVoiceListening = false;
+            _isVoiceConnecting = false;
+            _voiceStatus = 'Disconnected';
+          });
+        },
+        onMessage: ({required message, required source}) {
+          // Agent/user text messages; could surface if desired
+        },
+        onAudio: (_) {
+          // Audio playback is handled by the ElevenLabs client; nothing to do here.
+        },
+        onUserTranscript: ({required transcript, required eventId}) {
+          // Could display transcript if desired
+        },
+        onError: (error, [stack]) {
+          if (!mounted) return;
+          setState(() {
+            _isVoiceListening = false;
+            _isVoiceConnecting = false;
+            _voiceStatus = 'Error';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Voice error: $error'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+      ),
+    );
+
+    try {
+      await _voiceClient!.startSession(agentId: agentId);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVoiceListening = false;
+        _isVoiceConnecting = false;
+        _voiceStatus = 'Failed to connect';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not start voice: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _stopVoice() async {
+    await _voiceClient?.endSession();
+    if (!mounted) return;
+    setState(() {
+      _isVoiceListening = false;
+      _isVoiceConnecting = false;
+      _voiceStatus = 'Stopped';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Stopped listening'),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
