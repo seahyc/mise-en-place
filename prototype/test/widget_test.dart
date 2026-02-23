@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prototype/models/ingredient.dart';
+import 'package:mise_en_place/models/ingredient.dart';
 
 void main() {
   test('RecipeIngredient.scaled multiplies and formats amounts', () {
