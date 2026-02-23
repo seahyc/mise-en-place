@@ -100,6 +100,11 @@ class MessageHandler {
           _handleMcpConnectionStatus(json);
           break;
 
+        case 'agent_tool_request':
+          // Agent is about to call a tool (webhook, etc.) - informational only
+          callbacks.onDebug?.call(json);
+          break;
+
         case 'agent_tool_response':
           callbacks.onDebug?.call(json);
           _handleAgentToolResponse(json);
