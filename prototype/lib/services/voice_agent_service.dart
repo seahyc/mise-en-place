@@ -237,9 +237,6 @@ class VoiceAgentService {
   }
 
   void _handleVadScore({required double vadScore}) {
-    if (vadScore > 0.3) {
-      debugPrint('[VoiceAgent] 🎤 VAD score: ${vadScore.toStringAsFixed(2)}');
-    }
     onVadScoreChanged?.call(vadScore);
   }
 

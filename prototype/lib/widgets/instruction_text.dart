@@ -296,15 +296,11 @@ class _HoverableTextState extends State<_HoverableText> {
 
   void _showOverlay(BuildContext context) {
     if (widget.imageUrl == null || widget.imageUrl!.isEmpty) {
-      print('No image URL for: ${widget.text}');
       return;
     }
 
-    print('Showing overlay for: ${widget.text} with URL: ${widget.imageUrl}');
-
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) {
-      print('RenderBox is null');
       return;
     }
 
@@ -378,12 +374,10 @@ class _HoverableTextState extends State<_HoverableText> {
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        print('Mouse entered: ${widget.text}');
         setState(() => _isHovering = true);
         _showOverlay(context);
       },
       onExit: (_) {
-        print('Mouse exited: ${widget.text}');
         setState(() => _isHovering = false);
         _hideOverlay();
       },

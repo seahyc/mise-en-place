@@ -32,6 +32,10 @@ class _CookingModeScreenState extends State<CookingModeScreen> with TickerProvid
 
   final WebUrlSync _urlSync = const WebUrlSync();
 
+  // Debug panel position tracking
+  double _debugPanelX = 16; // Distance from right edge
+  double _debugPanelY = 120; // Distance from bottom edge
+
   @override
   void initState() {
     super.initState();
@@ -216,9 +220,9 @@ class _CookingModeScreenState extends State<CookingModeScreen> with TickerProvid
                         ),
                       ),
 
-                      // Debug toggle button
+                      // Debug toggle button - bottom right
                       Positioned(
-                        top: 52,
+                        bottom: 120,
                         right: 24,
                         child: GestureDetector(
                           onTap: _controller.toggleDebugSidebar,
@@ -253,77 +257,19 @@ class _CookingModeScreenState extends State<CookingModeScreen> with TickerProvid
                             ),
                           ),
 
-                          // Center content
+                          // Center content with responsive layout
                           Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 32),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Step media (image)
-                                  StepMedia(
-                                    session: _controller.session,
-                                    activeSteps: _controller.activeSteps,
-                                    currentStepIndex: _controller.currentStepIndex,
-                                  ),
-                                  const SizedBox(height: 20),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isLandscape = constraints.maxWidth > constraints.maxHeight;
+                                final isWideScreen = constraints.maxWidth > 900;
 
-                                  // Instruction text
-                                  CookingInstructionText(
-                                    isLoadingSession: _controller.isLoadingSession,
-                                    sessionError: _controller.sessionError,
-                                    session: _controller.session,
-                                    activeSteps: _controller.activeSteps,
-                                    currentStepIndex: _controller.currentStepIndex,
-                                    currentServings: _controller.currentServings,
-                                    unitSystem: _controller.unitSystem,
-                                    pendingTextChanges: _controller.pendingTextChanges,
-                                    onTextChangeAnimationComplete: (stepId) {
-                                      _controller.pendingTextChanges.remove(stepId);
-                                    },
-                                  ),
-
-                                  // Served button on last step
-                                  if (_controller.currentStepIndex == _controller.activeSteps.length - 1)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 32),
-                                      child: GestureDetector(
-                                        onTap: _endSessionAndNavigateBack,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [Color(0xFFFFB74D), Color(0xFFFF8A65)],
-                                            ),
-                                            borderRadius: BorderRadius.circular(30),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFFFFB74D).withValues(alpha: 0.4),
-                                                blurRadius: 16,
-                                                offset: const Offset(0, 4),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Text('🍽️', style: TextStyle(fontSize: 20)),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Served!',
-                                                style: GoogleFonts.lato(
-                                                  color: Colors.white,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                                if (isLandscape && isWideScreen) {
+                                  return _buildSideBySideLayout();
+                                } else {
+                                  return _buildStackedLayout();
+                                }
+                              },
                             ),
                           ),
 
@@ -351,20 +297,32 @@ class _CookingModeScreenState extends State<CookingModeScreen> with TickerProvid
             ),
 
           // Debug sidebar
-          // Discrete debug panel - bottom right, translucent
+          // Discrete debug panel - draggable, translucent
           if (_controller.showDebugSidebar)
             Positioned(
-              right: 16,
-              bottom: 120,
-              child: Container(
-                width: 320,
-                constraints: const BoxConstraints(maxHeight: 280),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                ),
-                child: Column(
+              right: _debugPanelX,
+              bottom: _debugPanelY,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  setState(() {
+                    // Update position based on drag (inverted because we're using right/bottom positioning)
+                    _debugPanelX -= details.delta.dx;
+                    _debugPanelY -= details.delta.dy;
+
+                    // Clamp to screen bounds (keep at least 50px of panel visible)
+                    _debugPanelX = _debugPanelX.clamp(-370.0, MediaQuery.of(context).size.width - 50);
+                    _debugPanelY = _debugPanelY.clamp(-230.0, MediaQuery.of(context).size.height - 50);
+                  });
+                },
+                child: Container(
+                  width: 420,
+                  constraints: const BoxConstraints(maxHeight: 280),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Header with close button
@@ -444,9 +402,152 @@ class _CookingModeScreenState extends State<CookingModeScreen> with TickerProvid
                     ),
                   ],
                 ),
+                ),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSideBySideLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Left: Step Media (40%)
+        Expanded(
+          flex: 4,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 48, right: 24),
+            child: Center(
+              child: StepMedia(
+                session: _controller.session,
+                activeSteps: _controller.activeSteps,
+                currentStepIndex: _controller.currentStepIndex,
+                layoutMode: ImageLayoutMode.sideBySide,
+              ),
+            ),
+          ),
+        ),
+
+        // Right: Instruction Text (60%)
+        Expanded(
+          flex: 6,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 24, right: 48),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 680),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CookingInstructionText(
+                      isLoadingSession: _controller.isLoadingSession,
+                      sessionError: _controller.sessionError,
+                      session: _controller.session,
+                      activeSteps: _controller.activeSteps,
+                      currentStepIndex: _controller.currentStepIndex,
+                      currentServings: _controller.currentServings,
+                      unitSystem: _controller.unitSystem,
+                      pendingTextChanges: _controller.pendingTextChanges,
+                      onTextChangeAnimationComplete: (stepId) {
+                        _controller.pendingTextChanges.remove(stepId);
+                      },
+                      textAlign: TextAlign.left,
+                    ),
+
+                    // Served button on last step
+                    if (_controller.currentStepIndex == _controller.activeSteps.length - 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 32),
+                        child: _buildServedButton(),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStackedLayout() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Step media (image)
+          StepMedia(
+            session: _controller.session,
+            activeSteps: _controller.activeSteps,
+            currentStepIndex: _controller.currentStepIndex,
+            layoutMode: ImageLayoutMode.stacked,
+          ),
+          const SizedBox(height: 20),
+
+          // Instruction text
+          CookingInstructionText(
+            isLoadingSession: _controller.isLoadingSession,
+            sessionError: _controller.sessionError,
+            session: _controller.session,
+            activeSteps: _controller.activeSteps,
+            currentStepIndex: _controller.currentStepIndex,
+            currentServings: _controller.currentServings,
+            unitSystem: _controller.unitSystem,
+            pendingTextChanges: _controller.pendingTextChanges,
+            onTextChangeAnimationComplete: (stepId) {
+              _controller.pendingTextChanges.remove(stepId);
+            },
+            textAlign: TextAlign.center,
+          ),
+
+          // Served button on last step
+          if (_controller.currentStepIndex == _controller.activeSteps.length - 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 32),
+              child: _buildServedButton(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServedButton() {
+    return GestureDetector(
+      onTap: _endSessionAndNavigateBack,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFB74D), Color(0xFFFF8A65)],
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFB74D).withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🍽️', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(
+              'Served!',
+              style: GoogleFonts.lato(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

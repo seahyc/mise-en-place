@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,8 +18,8 @@ import 'utils/auth_redirect.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Allow Google Fonts runtime fetching (emojis will use system font fallback)
-  GoogleFonts.config.allowRuntimeFetching = true;
+  // Disable runtime font fetching in production - fonts should be bundled
+  GoogleFonts.config.allowRuntimeFetching = kDebugMode;
 
   // Suppress noisy LiveKit/SDK warnings that don't affect functionality
   Logger.root.level = Level.INFO;

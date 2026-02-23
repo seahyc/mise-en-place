@@ -73,6 +73,8 @@ class RealtimeSessionService {
       StreamController<Map<String, dynamic>>.broadcast();
 
   String? _currentSessionId;
+  bool _isReconnecting = false;
+  Timer? _reconnectTimer;
 
   /// Stream of step changes for the subscribed session.
   Stream<SessionStepChange> get stepChanges => _stepChangesController.stream;
@@ -159,6 +161,7 @@ class RealtimeSessionService {
           if (error != null) {
             debugPrint('[Realtime] Steps channel error: $error');
           }
+          _handleChannelStatus(status, sessionId);
         });
 
     // Subscribe to cooking_sessions changes (for status, current_step_index)
@@ -186,6 +189,41 @@ class RealtimeSessionService {
         });
   }
 
+  /// Handle channel status changes and trigger reconnect if needed.
+  void _handleChannelStatus(RealtimeSubscribeStatus status, String sessionId) {
+    if (status == RealtimeSubscribeStatus.timedOut ||
+        status == RealtimeSubscribeStatus.closed) {
+      if (!_isReconnecting && _currentSessionId == sessionId) {
+        debugPrint('[Realtime] Channel disconnected, scheduling reconnect...');
+        _scheduleReconnect(sessionId);
+      }
+    } else if (status == RealtimeSubscribeStatus.subscribed) {
+      _isReconnecting = false;
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+    }
+  }
+
+  /// Schedule a reconnection attempt.
+  void _scheduleReconnect(String sessionId) {
+    _reconnectTimer?.cancel();
+    _isReconnecting = true;
+
+    _reconnectTimer = Timer(const Duration(seconds: 2), () async {
+      if (_currentSessionId == sessionId) {
+        debugPrint('[Realtime] 🔄 Attempting to reconnect to session: $sessionId');
+        // Unsubscribe first to clean up old channels
+        await _stepsChannel?.unsubscribe();
+        await _sessionChannel?.unsubscribe();
+        _stepsChannel = null;
+        _sessionChannel = null;
+        // Re-subscribe
+        _isReconnecting = false;
+        await subscribe(sessionId);
+      }
+    });
+  }
+
   /// Unsubscribe from all realtime channels.
   Future<void> unsubscribe() async {
     if (_currentSessionId != null) {
@@ -201,6 +239,8 @@ class RealtimeSessionService {
 
   /// Dispose of the service and clean up resources.
   Future<void> dispose() async {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     await unsubscribe();
     await _stepChangesController.close();
     await _sessionChangesController.close();
@@ -239,7 +279,9 @@ extension CookingSessionRealtime on CookingSession {
             // Merge new data with existing step to preserve nested data
             // that might not be in the realtime payload
             final existingStep = updatedSteps[index];
+            debugPrint('[Realtime] Existing step has ${existingStep.stepIngredients.length} ingredients');
             final updatedStep = _mergeStepUpdate(existingStep, change.newRecord!);
+            debugPrint('[Realtime] Merged step has ${updatedStep.stepIngredients.length} ingredients');
             updatedSteps[index] = updatedStep;
             debugPrint('[Realtime] Updated step at index $index');
           }

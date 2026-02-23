@@ -363,12 +363,16 @@ class _StreamingInstructionTextState extends State<StreamingInstructionText>
 
   Map<String, Map<String, String?>> _buildIngredientMap() {
     final map = <String, Map<String, String?>>{};
+    debugPrint('[StreamingText] Building ingredient map from ${widget.step.stepIngredients.length} ingredients');
     for (final ing in widget.step.stepIngredients) {
       map[ing.placeholderKey] = {
         'name': ing.master.name,
         'qty_display': ing.quantityDisplay,
         'image_url': ing.master.imageUrl,
       };
+    }
+    if (map.isEmpty) {
+      debugPrint('[StreamingText] WARNING: No ingredients found for step ${widget.step.id}');
     }
     return map;
   }

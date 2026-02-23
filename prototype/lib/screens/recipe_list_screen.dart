@@ -20,9 +20,7 @@ class RecipeListScreen extends StatefulWidget {
 class _RecipeListScreenState extends State<RecipeListScreen> {
   late Future<List<Recipe>> _recipesFuture;
   bool _isVoiceListening = false;
-  bool _isVoiceConnecting = false;
   ConversationClient? _voiceClient;
-  String _voiceStatus = 'Idle';
   final RecipeService _recipeService = RecipeService();
 
   // Watercolor aesthetic colors
@@ -222,9 +220,10 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   }
 
   Future<void> _startVoice() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final status = await Permission.microphone.request();
     if (!status.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('Microphone permission needed for voice input'),
           behavior: SnackBarBehavior.floating,
@@ -235,7 +234,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
 
     final agentId = dotenv.env['ELEVENLABS_AGENT_ID'] ?? '';
     if (agentId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('ELEVENLABS_AGENT_ID missing in .env'),
           behavior: SnackBarBehavior.floating,
@@ -244,11 +243,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
       );
       return;
     }
-
-    setState(() {
-      _isVoiceConnecting = true;
-      _voiceStatus = 'Connecting...';
-    });
 
     _voiceClient ??= ConversationClient(
       clientTools: {
@@ -263,8 +257,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         onConnect: ({required conversationId}) {
           setState(() {
             _isVoiceListening = true;
-            _isVoiceConnecting = false;
-            _voiceStatus = 'Listening';
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -277,8 +269,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
           if (!mounted) return;
           setState(() {
             _isVoiceListening = false;
-            _isVoiceConnecting = false;
-            _voiceStatus = 'Disconnected';
           });
         },
         onMessage: ({required message, required source}) {
@@ -294,8 +284,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
           if (!mounted) return;
           setState(() {
             _isVoiceListening = false;
-            _isVoiceConnecting = false;
-            _voiceStatus = 'Error';
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -314,8 +302,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
       if (!mounted) return;
       setState(() {
         _isVoiceListening = false;
-        _isVoiceConnecting = false;
-        _voiceStatus = 'Failed to connect';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -332,8 +318,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     if (!mounted) return;
     setState(() {
       _isVoiceListening = false;
-      _isVoiceConnecting = false;
-      _voiceStatus = 'Stopped';
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -457,6 +441,13 @@ class AddRecipeIngredientTool implements ClientTool {
   final RecipeService recipeService;
   AddRecipeIngredientTool({required this.recipeService});
 
+  double? _parseDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
   @override
   Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
     try {
@@ -526,6 +517,13 @@ class AddRecipeEquipmentTool implements ClientTool {
 class AddInstructionStepTool implements ClientTool {
   final RecipeService recipeService;
   AddInstructionStepTool({required this.recipeService});
+
+  int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
 
   @override
   Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {

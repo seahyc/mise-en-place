@@ -7,6 +7,12 @@ import '../models/cooking_timer.dart';
 import '../widgets/instruction_text.dart';
 import '../widgets/streaming_instruction_text.dart';
 
+/// Layout mode for step media (images)
+enum ImageLayoutMode {
+  stacked,     // Current centered layout (for portrait/narrow screens)
+  sideBySide,  // Side-by-side layout (for landscape wide screens)
+}
+
 /// Builds a responsive background with morphing, wave-like colors that react to audio
 class ReactiveBackground extends StatelessWidget {
   final double ambientPhase;
@@ -233,6 +239,7 @@ class CookingInstructionText extends StatelessWidget {
   final String unitSystem;
   final Map<String, TextChangeAnimation> pendingTextChanges;
   final void Function(String stepId) onTextChangeAnimationComplete;
+  final TextAlign textAlign;
 
   const CookingInstructionText({
     super.key,
@@ -245,6 +252,7 @@ class CookingInstructionText extends StatelessWidget {
     required this.unitSystem,
     required this.pendingTextChanges,
     required this.onTextChangeAnimationComplete,
+    this.textAlign = TextAlign.center,
   });
 
   @override
@@ -305,12 +313,13 @@ class CookingInstructionText extends StatelessWidget {
           key: ValueKey('streaming-${step.id}-${pendingChange.timestamp.millisecondsSinceEpoch}'),
           step: step,
           oldDescription: pendingChange.oldText,
-          textAlign: TextAlign.center,
+          textAlign: textAlign,
           baseStyle: GoogleFonts.playfairDisplay(
             fontSize: 26,
             fontWeight: FontWeight.bold,
             color: Colors.white,
-            height: 1.4,
+            height: 1.6,
+            letterSpacing: 0.3,
           ),
           ingredientColor: const Color(0xFFFFB74D),
           equipmentColor: const Color(0xFF81D4FA),
@@ -320,12 +329,13 @@ class CookingInstructionText extends StatelessWidget {
 
       return InstructionText.fromSessionStep(
         step,
-        textAlign: TextAlign.center,
+        textAlign: textAlign,
         baseStyle: GoogleFonts.playfairDisplay(
           fontSize: 26,
           fontWeight: FontWeight.bold,
           color: Colors.white,
-          height: 1.4,
+          height: 1.6,
+          letterSpacing: 0.3,
         ),
         ingredientColor: const Color(0xFFFFB74D),
         equipmentColor: const Color(0xFF81D4FA),
@@ -337,12 +347,13 @@ class CookingInstructionText extends StatelessWidget {
     if (currentStepIndex < activeSteps.length && activeSteps[currentStepIndex] is InstructionStep) {
       return InstructionText.fromStep(
         activeSteps[currentStepIndex] as InstructionStep,
-        textAlign: TextAlign.center,
+        textAlign: textAlign,
         baseStyle: GoogleFonts.playfairDisplay(
           fontSize: 26,
           fontWeight: FontWeight.bold,
           color: Colors.white,
-          height: 1.4,
+          height: 1.6,
+          letterSpacing: 0.3,
         ),
         ingredientColor: const Color(0xFFFFB74D),
         equipmentColor: const Color(0xFF81D4FA),
@@ -363,12 +374,14 @@ class StepMedia extends StatelessWidget {
   final CookingSession? session;
   final List<dynamic> activeSteps;
   final int currentStepIndex;
+  final ImageLayoutMode layoutMode;
 
   const StepMedia({
     super.key,
     this.session,
     required this.activeSteps,
     required this.currentStepIndex,
+    this.layoutMode = ImageLayoutMode.stacked,
   });
 
   String? get _mediaUrl {
@@ -404,8 +417,20 @@ class StepMedia extends StatelessWidget {
     }
 
     final screenSize = MediaQuery.of(context).size;
-    final maxWidth = (screenSize.width * 0.35).clamp(200.0, 350.0);
-    final maxHeight = (screenSize.height * 0.35).clamp(180.0, 300.0);
+
+    // Calculate dimensions based on layout mode
+    late final double maxWidth;
+    late final double maxHeight;
+
+    if (layoutMode == ImageLayoutMode.sideBySide) {
+      // Side-by-side: Use parent constraints, taller aspect
+      maxWidth = double.infinity; // Let Expanded flex handle width
+      maxHeight = (screenSize.height * 0.5).clamp(300.0, 500.0);
+    } else {
+      // Stacked: Current behavior
+      maxWidth = (screenSize.width * 0.35).clamp(200.0, 350.0);
+      maxHeight = (screenSize.height * 0.35).clamp(180.0, 300.0);
+    }
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
@@ -424,16 +449,33 @@ class StepMedia extends StatelessWidget {
         key: ValueKey('media-$currentStepIndex'),
         child: ShaderMask(
           shaderCallback: (Rect bounds) {
-            return RadialGradient(
-              center: Alignment.center,
-              radius: 0.85,
-              colors: [
-                Colors.white,
-                Colors.white,
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.6, 1.0],
-            ).createShader(bounds);
+            if (layoutMode == ImageLayoutMode.sideBySide) {
+              // Softer rectangular fade for side-by-side
+              return const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.transparent,
+                  Colors.white,
+                  Colors.white,
+                  Colors.white,
+                  Colors.transparent,
+                ],
+                stops: [0.0, 0.08, 0.15, 0.92, 1.0],
+              ).createShader(bounds);
+            } else {
+              // Keep radial gradient for stacked mode
+              return const RadialGradient(
+                center: Alignment.center,
+                radius: 0.85,
+                colors: [
+                  Colors.white,
+                  Colors.white,
+                  Colors.transparent,
+                ],
+                stops: [0.0, 0.6, 1.0],
+              ).createShader(bounds);
+            }
           },
           blendMode: BlendMode.dstIn,
           child: Container(
@@ -450,7 +492,9 @@ class StepMedia extends StatelessWidget {
                   if (loadingProgress == null) return child;
                   return Container(
                     height: maxHeight * 0.7,
-                    width: maxWidth * 0.7,
+                    width: layoutMode == ImageLayoutMode.sideBySide
+                        ? double.infinity
+                        : maxWidth * 0.7,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
