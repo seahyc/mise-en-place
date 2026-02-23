@@ -237,7 +237,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
+      ref: main
       resolved-ref: b074ca0135f3b01eaf5f8e375d1a3609f5009a4b
       url: "https://github.com/seahyc/elevenlabs-flutter-fork.git"
     source: git
