@@ -1,5 +1,5 @@
 {
-  "agent_id": "agent_3201kc6kprh1ed8t1ese75dms3fr",
+  "agent_id": "agent_7501kc6hnyzfe2nraabtajn6vq17",
   "name": "New agent",
   "conversation_config": {
     "asr": {
@@ -62,14 +62,15 @@
         "temperature": 0.0,
         "max_tokens": -1,
         "tool_ids": [
-          "tool_9301kc6pkppjfd0tcckx9628nfr5",
-          "tool_4801kc6pkq3resr8a4tw7vjg7g9c",
-          "tool_2701kc6pkqhbe9crqwdpvm4qp1sy",
-          "tool_5301kc6pkqw3egbawp2kw9s52ncg",
-          "tool_3101kc6pkr7bfh2tqgcqh5z1m0hv",
-          "tool_3501kc6pkrp7ed6sxghbmq637t9d",
-          "tool_8301kc6pks5eep2tyndws5sjys7w",
-          "tool_6501kc6pkskeef6tr7vytvc1xa9d"
+          "tool_6001kc6tv5w3f1xsxfpcq3j8thj6",
+          "tool_6901kc6tv6mkfjva0691a2t2x1wj",
+          "tool_4301kc6tv737f5ws0v6ph5kgcgg8",
+          "tool_7801kc6tv7jne1atw7c3srmb7tzv",
+          "tool_5401kc6tv82ff96syzb72bwq0h0d",
+          "tool_8101kc6tv8hfewps0z1pzkenxtde",
+          "tool_5301kc6tv90bfmkbw0nfjge1eeh1",
+          "tool_2601kc6tv9fbf1f8zasj88wxfad9",
+          "tool_2401kc6tv9yqf0xa5ywpkb0xxk1d"
         ],
         "built_in_tools": {
           "end_call": null,
@@ -585,8 +586,8 @@
     }
   },
   "metadata": {
-    "created_at_unix_secs": 1765453555,
-    "updated_at_unix_secs": 1765456603
+    "created_at_unix_secs": 1765451432,
+    "updated_at_unix_secs": 1765461044
   },
   "platform_settings": {
     "evaluation": {
@@ -832,8 +833,8 @@
   },
   "access_info": {
     "is_creator": true,
-    "creator_name": "Satvik Sinha",
-    "creator_email": "satviksinha2002@gmail.com",
+    "creator_name": "Ying Cong Seah",
+    "creator_email": "yingcong@glints.com",
     "role": "admin"
   },
   "tags": [],

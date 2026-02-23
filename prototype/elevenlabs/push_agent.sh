@@ -1,5 +1,8 @@
 #!/bin/bash
 # Push local agent configuration to ElevenLabs
+# Usage: ./push_agent.sh [agent_name]
+#   agent_name: gordon_ramsay, aroma (default: gordon_ramsay)
+#
 # This script is the SOURCE OF TRUTH:
 # 1. Clears agent's tool_ids
 # 2. Deletes matching shared tools by name
@@ -13,28 +16,59 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Load environment variables
 if [ -f "$PROJECT_ROOT/.env" ]; then
-    export $(grep -E '^(ELEVENLABS_API_KEY|ELEVENLABS_AGENT_ID)=' "$PROJECT_ROOT/.env" | xargs)
+    export $(grep -E '^ELEVENLABS_' "$PROJECT_ROOT/.env" | xargs)
 fi
 
-if [ -z "$ELEVENLABS_API_KEY" ] || [ -z "$ELEVENLABS_AGENT_ID" ]; then
-    echo "Error: ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID must be set in .env"
+if [ -z "$ELEVENLABS_API_KEY" ]; then
+    echo "Error: ELEVENLABS_API_KEY must be set in .env"
     exit 1
 fi
 
-INPUT_FILE="${1:-$SCRIPT_DIR/agent_config.json}"
+# Agent selection
+AGENT_NAME="${1:-gordon_ramsay}"
+AGENTS_DIR="$SCRIPT_DIR/agents"
 
-if [ ! -f "$INPUT_FILE" ]; then
-    echo "Error: Config file not found: $INPUT_FILE"
-    echo "Run ./pull_agent.sh first to get the current configuration"
+# Map agent name to env var and config file
+case "$AGENT_NAME" in
+    gordon_ramsay|gordon|ramsay)
+        AGENT_ID="$ELEVENLABS_AGENT_ID"
+        CONFIG_FILE="$AGENTS_DIR/gordon_ramsay.json"
+        DISPLAY_NAME="Gordon Ramsay"
+        ;;
+    aroma)
+        AGENT_ID="$ELEVENLABS_AGENT_ID_AROMA"
+        CONFIG_FILE="$AGENTS_DIR/aroma.json"
+        DISPLAY_NAME="Aroma"
+        ;;
+    *)
+        echo "Unknown agent: $AGENT_NAME"
+        echo "Available agents: gordon_ramsay, aroma"
+        exit 1
+        ;;
+esac
+
+if [ -z "$AGENT_ID" ]; then
+    echo "Error: Agent ID not set for $DISPLAY_NAME"
+    echo "Set ELEVENLABS_AGENT_ID_$(echo $AGENT_NAME | tr '[:lower:]' '[:upper:]') in .env"
     exit 1
 fi
 
-echo "Pushing agent configuration from: $INPUT_FILE"
-echo "Target agent: $ELEVENLABS_AGENT_ID"
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: Config file not found: $CONFIG_FILE"
+    echo "Run ./pull_agent.sh $AGENT_NAME first to get the current configuration"
+    exit 1
+fi
+
+echo "╔════════════════════════════════════════════╗"
+echo "║  Pushing Agent: $DISPLAY_NAME"
+echo "╚════════════════════════════════════════════╝"
+echo ""
+echo "Config: $CONFIG_FILE"
+echo "Agent ID: $AGENT_ID"
 echo ""
 
 # Get inline tools from our config (source of truth)
-INLINE_TOOLS=$(jq -c '.conversation_config.agent.prompt.tools // []' "$INPUT_FILE")
+INLINE_TOOLS=$(jq -c '.conversation_config.agent.prompt.tools // []' "$CONFIG_FILE")
 INLINE_TOOL_COUNT=$(echo "$INLINE_TOOLS" | jq 'length')
 
 # Build list of tool names we want (excluding system tools)
@@ -56,7 +90,7 @@ fi
 # Step 1: Clear agent's tool_ids (clean slate)
 echo ""
 echo "Step 1: Clearing agent's tool references..."
-curl -s -X PATCH "https://api.elevenlabs.io/v1/convai/agents/$ELEVENLABS_AGENT_ID" \
+curl -s -X PATCH "https://api.elevenlabs.io/v1/convai/agents/$AGENT_ID" \
     -H "xi-api-key: $ELEVENLABS_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{"conversation_config":{"agent":{"prompt":{"tool_ids":[]}}}}' > /dev/null
@@ -72,11 +106,16 @@ SHARED_TOOLS=$(curl -s "https://api.elevenlabs.io/v1/convai/tools" \
 echo ""
 echo "Step 3: Deleting existing tools with matching names..."
 for name in $TOOL_NAMES; do
-    EXISTING_ID=$(echo "$SHARED_TOOLS" | jq -r --arg name "$name" '.tools[] | select(.tool_config.name == $name) | .id')
-    if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
-        echo "  Deleting: $name ($EXISTING_ID)"
-        curl -s -X DELETE "https://api.elevenlabs.io/v1/convai/tools/$EXISTING_ID" \
-            -H "xi-api-key: $ELEVENLABS_API_KEY"
+    # Get all matching tool IDs (there might be duplicates)
+    EXISTING_IDS=$(echo "$SHARED_TOOLS" | jq -r --arg name "$name" '.tools[] | select(.tool_config.name == $name) | .id')
+    if [ -n "$EXISTING_IDS" ]; then
+        while IFS= read -r tool_id; do
+            if [ -n "$tool_id" ] && [ "$tool_id" != "null" ]; then
+                echo "  Deleting: $name ($tool_id)"
+                curl -s -X DELETE "https://api.elevenlabs.io/v1/convai/tools/$tool_id" \
+                    -H "xi-api-key: $ELEVENLABS_API_KEY" > /dev/null
+            fi
+        done <<< "$EXISTING_IDS"
     fi
 done
 echo "  ✓ Done"
@@ -120,8 +159,17 @@ echo "Created ${#TOOL_IDS[@]} tools"
 # The local config keeps inline tools as source of truth for syncing to shared tools
 TOOL_IDS_JSON=$(printf '%s\n' "${TOOL_IDS[@]}" | jq -R . | jq -s .)
 
-# Build payload: remove inline tools completely, only set tool_ids
-# Note: Cannot send both tools and tool_ids - API restriction
+# First clear any stale tools/tool_ids (prevents "Unknown tool" errors)
+echo ""
+echo "Step 5: Clearing stale tool references..."
+curl -s -X PATCH "https://api.elevenlabs.io/v1/convai/agents/$AGENT_ID" \
+    -H "xi-api-key: $ELEVENLABS_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"conversation_config":{"agent":{"prompt":{"tools":null}}}}' > /dev/null
+echo "  ✓ Cleared"
+
+# Build payload: set tool_ids only
+# Note: ElevenLabs auto-populates .tools from tool_ids on read-back
 PAYLOAD=$(jq --argjson tool_ids "$TOOL_IDS_JSON" '{
     conversation_config: (
         .conversation_config |
@@ -130,12 +178,12 @@ PAYLOAD=$(jq --argjson tool_ids "$TOOL_IDS_JSON" '{
     ),
     platform_settings: .platform_settings,
     name: .name
-}' "$INPUT_FILE")
+}' "$CONFIG_FILE")
 
 # Step 6: Update agent
 echo ""
-echo "Step 5: Updating agent with new tool references..."
-RESPONSE=$(curl -s -X PATCH "https://api.elevenlabs.io/v1/convai/agents/$ELEVENLABS_AGENT_ID" \
+echo "Step 6: Updating agent with new tool references..."
+RESPONSE=$(curl -s -X PATCH "https://api.elevenlabs.io/v1/convai/agents/$AGENT_ID" \
     -H "xi-api-key: $ELEVENLABS_API_KEY" \
     -H "Content-Type: application/json" \
     -d "$PAYLOAD")
@@ -149,5 +197,5 @@ else
     echo ""
     # Pull the latest to confirm and sync
     echo "Pulling updated configuration..."
-    "$SCRIPT_DIR/pull_agent.sh"
+    "$SCRIPT_DIR/pull_agent.sh" "$AGENT_NAME"
 fi
