@@ -236,9 +236,11 @@ packages:
   elevenlabs_agents:
     dependency: "direct main"
     description:
-      path: "packages/elevenlabs_agents"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: b074ca0135f3b01eaf5f8e375d1a3609f5009a4b
+      url: "https://github.com/seahyc/elevenlabs-flutter-fork.git"
+    source: git
     version: "0.3.0"
   fake_async:
     dependency: transitive
