@@ -7,7 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 Future<void> loadEnvIfPresent() async {
   try {
     await dotenv.load(fileName: ".env");
-  } on Exception catch (e) {
+  } catch (e) {
     debugPrint('[Env] .env not loaded ($e). Falling back to dart-define values.');
   }
 }
