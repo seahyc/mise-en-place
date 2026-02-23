@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:elevenlabs_agents/elevenlabs_agents.dart';
 import '../models/cooking_timer.dart';
+import '../models/enums.dart';
+import '../services/music_service.dart';
 
 /// Tool for navigating between cooking steps
 class NavigateToStepTool implements ClientTool {
@@ -419,6 +421,63 @@ class SwitchUnitsTool implements ClientTool {
       return ClientToolResult.success('{"switched": true, "unit_system": "$newSystem"}');
     } catch (e, stack) {
       debugPrint('[Tool] switch_units ERROR: $e\n$stack');
+      return ClientToolResult.failure(e.toString());
+    }
+  }
+}
+
+/// Tool for playing atmospheric music suited to the cuisine
+class PlayAtmosphericMusicTool implements ClientTool {
+  final MusicService musicService;
+  final Cuisine Function() getCuisine;
+
+  PlayAtmosphericMusicTool({
+    required this.musicService,
+    required this.getCuisine,
+  });
+
+  @override
+  Future<ClientToolResult?> execute(Map<String, dynamic> parameters) async {
+    debugPrint('[Tool] play_atmospheric_music called with: $parameters');
+    try {
+      // Parse duration parameter (default 30 seconds)
+      final rawDuration = parameters['duration_seconds'];
+      int durationSeconds = 30;
+
+      if (rawDuration != null) {
+        if (rawDuration is int) {
+          durationSeconds = rawDuration;
+        } else if (rawDuration is double) {
+          durationSeconds = rawDuration.toInt();
+        } else if (rawDuration is String) {
+          durationSeconds = int.tryParse(rawDuration) ?? 30;
+        }
+      }
+
+      // Clamp between 10 and 60 seconds
+      durationSeconds = durationSeconds.clamp(10, 60);
+
+      final cuisine = getCuisine();
+
+      // Start playing music (async)
+      musicService.playAtmosphericMusic(
+        cuisine: cuisine,
+        durationSeconds: durationSeconds,
+      ).catchError((e) {
+        debugPrint('[Tool] play_atmospheric_music async error: $e');
+      });
+
+      debugPrint('[Tool] play_atmospheric_music success: $cuisine for ${durationSeconds}s');
+
+      // Return success immediately (music generation happens in background)
+      return ClientToolResult.success(jsonEncode({
+        'success': true,
+        'cuisine': cuisine.name,
+        'duration_seconds': durationSeconds,
+        'message': 'Playing ${durationSeconds}s of atmospheric $cuisine music',
+      }));
+    } catch (e, stack) {
+      debugPrint('[Tool] play_atmospheric_music ERROR: $e\n$stack');
       return ClientToolResult.failure(e.toString());
     }
   }

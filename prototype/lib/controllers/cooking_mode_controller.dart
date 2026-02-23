@@ -10,6 +10,7 @@ import '../services/cooking_session_service.dart';
 import '../services/realtime_session_service.dart';
 import '../services/voice_agent_service.dart';
 import '../services/cooking_timer_manager.dart';
+import '../services/music_service.dart';
 import '../tools/cooking_mode_tools.dart';
 import '../widgets/debug_tools_sidebar.dart';
 import '../widgets/streaming_instruction_text.dart';
@@ -37,6 +38,7 @@ class CookingModeController extends ChangeNotifier {
   final RealtimeSessionService _realtimeService = RealtimeSessionService();
   final VoiceAgentService _voiceAgent = VoiceAgentService();
   final CookingTimerManager _timerManager = CookingTimerManager();
+  final MusicService _musicService = MusicService();
 
   StreamSubscription<SessionStepChange>? _stepChangesSubscription;
 
@@ -179,6 +181,10 @@ class CookingModeController extends ChangeNotifier {
         getTimers: () => _timerManager.activeTimers,
       ),
       'switch_units': SwitchUnitsTool(onSwitchUnits: switchUnits),
+      'play_atmospheric_music': PlayAtmosphericMusicTool(
+        musicService: _musicService,
+        getCuisine: () => recipe.cuisine,
+      ),
     };
   }
 
@@ -447,6 +453,7 @@ class CookingModeController extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────────────────────
 
   void toggleDebugSidebar() {
+    if (!kDebugMode) return; // Debug panel only available in debug builds
     _showDebugSidebar = !_showDebugSidebar;
     notifyListeners();
   }
