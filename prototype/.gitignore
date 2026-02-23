@@ -19,3 +19,8 @@ build/
 test_results.log
 .DS_Store
 .env
+
+# Android keystore (secrets)
+*.jks
+*.keystore
+key.properties
