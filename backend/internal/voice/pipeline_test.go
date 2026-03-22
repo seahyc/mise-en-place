@@ -29,7 +29,11 @@ type stubLLM struct {
 	err  error
 }
 
-func (s *stubLLM) Complete(_ context.Context, _ []llm.Message, _ []llm.ToolDef) (*llm.Response, error) {
+func (s *stubLLM) Chat(_ context.Context, _ []llm.Message) (*llm.Response, error) {
+	return s.resp, s.err
+}
+
+func (s *stubLLM) ChatWithTools(_ context.Context, _ []llm.Message, _ []llm.ToolDef) (*llm.Response, error) {
 	return s.resp, s.err
 }
 
@@ -83,7 +87,7 @@ func TestPipeline_ProcessUtterance(t *testing.T) {
 	llmClient := &stubLLM{resp: &llm.Response{
 		Content: "The next step is to chop the onions.",
 		ToolCalls: []llm.ToolCall{
-			{ID: "1", Name: "navigate_step", Arguments: map[string]any{"step_number": float64(2)}},
+			{Name: "navigate_step", Args: map[string]any{"step_number": float64(2)}},
 		},
 	}}
 	ttsClient := &stubTTS{audio: []byte{0x01, 0x02}, healthy: true}

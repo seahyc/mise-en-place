@@ -29,13 +29,29 @@ func (s *stubLLMClient) ChatWithTools(_ context.Context, _ []llm.Message, _ []ll
 	return &llm.Response{Content: "[]"}, nil
 }
 
-type stubRecipeRepo struct {
+type sessStubRecipeRepo struct {
 	recipes map[types.RecipeID]*types.Recipe
 }
 
-func (s *stubRecipeRepo) GetByID(_ context.Context, id types.RecipeID) (*types.Recipe, error) {
+func (s *sessStubRecipeRepo) GetByID(_ context.Context, id types.RecipeID) (*types.Recipe, error) {
 	r := s.recipes[id]
 	return r, nil
+}
+
+func (s *sessStubRecipeRepo) Create(_ context.Context, _ repo.CreateRecipeArgs) (*types.Recipe, error) {
+	return nil, nil
+}
+
+func (s *sessStubRecipeRepo) ListByUser(_ context.Context, _ types.UserID, _, _ int) ([]types.Recipe, int, error) {
+	return nil, 0, nil
+}
+
+func (s *sessStubRecipeRepo) Update(_ context.Context, _ types.RecipeID, _ repo.UpdateRecipeArgs) error {
+	return nil
+}
+
+func (s *sessStubRecipeRepo) Delete(_ context.Context, _ types.RecipeID) error {
+	return nil
 }
 
 type stubSessionRepo struct {
@@ -95,7 +111,7 @@ func (s *stubSessionRepo) ListByUser(_ context.Context, _ types.UserID) ([]types
 // --- Helpers ---
 
 func setupSessionHandler() *handler.SessionHandler {
-	recipeRepo := &stubRecipeRepo{
+	recipeRepo := &sessStubRecipeRepo{
 		recipes: map[types.RecipeID]*types.Recipe{
 			"r1": {ID: "r1", Title: "Pasta", Steps: []types.RecipeStep{{OrderIndex: 0, Text: "Boil"}}},
 		},

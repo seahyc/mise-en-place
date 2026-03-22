@@ -47,16 +47,32 @@ func NewFallbackLLMClient(primary, secondary llm.Client) *FallbackLLMClient {
 	return &FallbackLLMClient{primary: primary, secondary: secondary}
 }
 
-// Complete tries the primary LLM client first; on failure, falls back to the
+// Chat tries the primary LLM client first; on failure, falls back to the
 // secondary. Returns an error only if both fail.
-func (c *FallbackLLMClient) Complete(ctx context.Context, messages []llm.Message, tools []llm.ToolDef) (*llm.Response, error) {
-	resp, err := c.primary.Complete(ctx, messages, tools)
+func (c *FallbackLLMClient) Chat(ctx context.Context, messages []llm.Message) (*llm.Response, error) {
+	resp, err := c.primary.Chat(ctx, messages)
 	if err == nil {
 		return resp, nil
 	}
 	slog.Warn("primary LLM failed, trying fallback", "error", err)
 
-	resp2, err2 := c.secondary.Complete(ctx, messages, tools)
+	resp2, err2 := c.secondary.Chat(ctx, messages)
+	if err2 != nil {
+		return nil, fmt.Errorf("voice: both LLM clients failed: primary=%w, secondary=%v", err, err2)
+	}
+	return resp2, nil
+}
+
+// ChatWithTools tries the primary LLM client first; on failure, falls back to
+// the secondary. Returns an error only if both fail.
+func (c *FallbackLLMClient) ChatWithTools(ctx context.Context, messages []llm.Message, tools []llm.ToolDef) (*llm.Response, error) {
+	resp, err := c.primary.ChatWithTools(ctx, messages, tools)
+	if err == nil {
+		return resp, nil
+	}
+	slog.Warn("primary LLM failed, trying fallback", "error", err)
+
+	resp2, err2 := c.secondary.ChatWithTools(ctx, messages, tools)
 	if err2 != nil {
 		return nil, fmt.Errorf("voice: both LLM clients failed: primary=%w, secondary=%v", err, err2)
 	}

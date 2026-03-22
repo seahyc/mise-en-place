@@ -53,7 +53,7 @@ func TestFallbackLLM_PrimarySucceeds(t *testing.T) {
 	secondary := &stubLLM{resp: &llm.Response{Content: "secondary response"}}
 
 	client := voice.NewFallbackLLMClient(primary, secondary)
-	resp, err := client.Complete(context.Background(), nil, nil)
+	resp, err := client.ChatWithTools(context.Background(), nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestFallbackLLM_PrimaryFailsSecondarySucceeds(t *testing.T) {
 	secondary := &stubLLM{resp: &llm.Response{Content: "secondary response"}}
 
 	client := voice.NewFallbackLLMClient(primary, secondary)
-	resp, err := client.Complete(context.Background(), nil, nil)
+	resp, err := client.ChatWithTools(context.Background(), nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestFallbackLLM_BothFail(t *testing.T) {
 	secondary := &stubLLM{err: errors.New("secondary down")}
 
 	client := voice.NewFallbackLLMClient(primary, secondary)
-	_, err := client.Complete(context.Background(), nil, nil)
+	_, err := client.ChatWithTools(context.Background(), nil, nil)
 	if err == nil {
 		t.Error("expected error when both LLM clients fail")
 	}

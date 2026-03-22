@@ -86,7 +86,7 @@ func (p *Pipeline) ProcessUtterance(ctx context.Context, sessionID types.Session
 
 	// 3. LLM with tools
 	tools := CookingToolDefs()
-	llmResp, err := p.llmClient.Complete(ctx, messages, tools)
+	llmResp, err := p.llmClient.ChatWithTools(ctx, messages, tools)
 	if err != nil {
 		return nil, fmt.Errorf("voice: llm failed: %w", err)
 	}
@@ -101,7 +101,7 @@ func (p *Pipeline) ProcessUtterance(ctx context.Context, sessionID types.Session
 		if len(llmResp.ToolCalls) > 0 {
 			toolCallsMap = make(map[string]any)
 			for _, tc := range llmResp.ToolCalls {
-				toolCallsMap[tc.Name] = tc.Arguments
+				toolCallsMap[tc.Name] = tc.Args
 			}
 		}
 		if err := p.conversations.AddTurn(ctx, sessionID, "assistant", llmResp.Content, toolCallsMap); err != nil {

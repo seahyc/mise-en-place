@@ -114,35 +114,36 @@ func TestVoiceHandler_InvalidToken(t *testing.T) {
 
 // --- Stubs for full pipeline test ---
 
-type stubSTT struct{ text string; err error }
-func (s *stubSTT) Transcribe(context.Context, []byte, string) (string, error) { return s.text, s.err }
-var _ stt.Client = (*stubSTT)(nil)
+type voiceStubSTT struct{ text string; err error }
+func (s *voiceStubSTT) Transcribe(_ context.Context, _ []byte, _ string) (string, error) { return s.text, s.err }
+var _ stt.Client = (*voiceStubSTT)(nil)
 
-type stubLLM struct{ resp *llm.Response; err error }
-func (s *stubLLM) Complete(context.Context, []llm.Message, []llm.ToolDef) (*llm.Response, error) { return s.resp, s.err }
-var _ llm.Client = (*stubLLM)(nil)
+type voiceStubLLM struct{ resp *llm.Response; err error }
+func (s *voiceStubLLM) Chat(_ context.Context, _ []llm.Message) (*llm.Response, error) { return s.resp, s.err }
+func (s *voiceStubLLM) ChatWithTools(_ context.Context, _ []llm.Message, _ []llm.ToolDef) (*llm.Response, error) { return s.resp, s.err }
+var _ llm.Client = (*voiceStubLLM)(nil)
 
-type stubTTS struct{ audio []byte; healthy bool; err error }
-func (s *stubTTS) Synthesize(context.Context, string) ([]byte, error) { return s.audio, s.err }
-func (s *stubTTS) SynthesizeStream(_ context.Context, _ string, out chan<- []byte) error { defer close(out); return nil }
-func (s *stubTTS) Healthy(context.Context) bool { return s.healthy }
-var _ tts.Client = (*stubTTS)(nil)
+type voiceStubTTS struct{ audio []byte; healthy bool; err error }
+func (s *voiceStubTTS) Synthesize(_ context.Context, _ string) ([]byte, error) { return s.audio, s.err }
+func (s *voiceStubTTS) SynthesizeStream(_ context.Context, _ string, out chan<- []byte) error { defer close(out); return nil }
+func (s *voiceStubTTS) Healthy(_ context.Context) bool { return s.healthy }
+var _ tts.Client = (*voiceStubTTS)(nil)
 
 type stubConvo struct{}
-func (s *stubConvo) AddTurn(context.Context, types.SessionID, string, string, map[string]any) error { return nil }
-func (s *stubConvo) GetHistory(context.Context, types.SessionID) ([]types.ConversationTurn, error) { return nil, nil }
-func (s *stubConvo) GetRecentHistory(context.Context, types.SessionID, int) ([]types.ConversationTurn, error) { return nil, nil }
+func (s *stubConvo) AddTurn(_ context.Context, _ types.SessionID, _, _ string, _ map[string]any) error { return nil }
+func (s *stubConvo) GetHistory(_ context.Context, _ types.SessionID) ([]types.ConversationTurn, error) { return nil, nil }
+func (s *stubConvo) GetRecentHistory(_ context.Context, _ types.SessionID, _ int) ([]types.ConversationTurn, error) { return nil, nil }
 var _ repo.ConversationRepo = (*stubConvo)(nil)
 
 func TestVoiceHandler_FullPipelineFlow(t *testing.T) {
-	sttC := &stubSTT{text: "next step please"}
-	llmC := &stubLLM{resp: &llm.Response{
+	sttC := &voiceStubSTT{text: "next step please"}
+	llmC := &voiceStubLLM{resp: &llm.Response{
 		Content: "Moving to step 2: dice the tomatoes.",
 		ToolCalls: []llm.ToolCall{
-			{ID: "tc1", Name: "navigate_step", Arguments: map[string]any{"step_number": float64(2)}},
+			{Name: "navigate_step", Args: map[string]any{"step_number": float64(2)}},
 		},
 	}}
-	ttsC := &stubTTS{audio: []byte{0xAA, 0xBB, 0xCC}, healthy: true}
+	ttsC := &voiceStubTTS{audio: []byte{0xAA, 0xBB, 0xCC}, healthy: true}
 
 	pipeline := voice.NewPipeline(sttC, llmC, ttsC, nil, &stubConvo{})
 	vh := handler.NewVoiceHandler(testJWTSecret, pipeline)

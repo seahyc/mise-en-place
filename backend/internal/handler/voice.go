@@ -14,7 +14,7 @@ import (
 	"github.com/yingcong/mise-en-place/backend/internal/voice"
 )
 
-var upgrader = websocket.Upgrader{
+var voiceUpgrader = websocket.Upgrader{
 	ReadBufferSize:  16384,
 	WriteBufferSize: 16384,
 	CheckOrigin:     func(r *http.Request) bool { return true },
@@ -55,7 +55,7 @@ func NewVoiceHandler(jwtSecret string, pipeline *voice.Pipeline) *VoiceHandler {
 // a session_start text message, then enters a read loop that handles binary
 // audio frames and text control messages.
 func (h *VoiceHandler) HandleVoice(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := voiceUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.Error("voice: websocket upgrade failed", "error", err)
 		return
@@ -208,7 +208,7 @@ func (h *VoiceHandler) processAndRespond(ctx context.Context, conn *websocket.Co
 		h.writeJSON(conn, WSMessage{
 			Type:     "tool_call",
 			ToolName: tc.Name,
-			ToolArgs: tc.Arguments,
+			ToolArgs: tc.Args,
 		})
 	}
 

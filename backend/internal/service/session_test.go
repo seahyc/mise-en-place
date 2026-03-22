@@ -24,6 +24,22 @@ func (s *stubRecipeRepo) GetByID(_ context.Context, id types.RecipeID) (*types.R
 	return r, nil
 }
 
+func (s *stubRecipeRepo) Create(_ context.Context, _ repo.CreateRecipeArgs) (*types.Recipe, error) {
+	return nil, nil
+}
+
+func (s *stubRecipeRepo) ListByUser(_ context.Context, _ types.UserID, _, _ int) ([]types.Recipe, int, error) {
+	return nil, 0, nil
+}
+
+func (s *stubRecipeRepo) Update(_ context.Context, _ types.RecipeID, _ repo.UpdateRecipeArgs) error {
+	return nil
+}
+
+func (s *stubRecipeRepo) Delete(_ context.Context, _ types.RecipeID) error {
+	return nil
+}
+
 // --- Stub SessionRepo ---
 
 type stubSessionRepo struct {

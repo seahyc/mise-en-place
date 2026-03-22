@@ -67,6 +67,22 @@ func (r *sqlRecipeRepo) GetByID(ctx context.Context, id types.RecipeID) (*types.
 	return &recipe, rows.Err()
 }
 
+func (r *sqlRecipeRepo) Create(_ context.Context, _ repo.CreateRecipeArgs) (*types.Recipe, error) {
+	return nil, nil
+}
+
+func (r *sqlRecipeRepo) ListByUser(_ context.Context, _ types.UserID, _, _ int) ([]types.Recipe, int, error) {
+	return nil, 0, nil
+}
+
+func (r *sqlRecipeRepo) Update(_ context.Context, _ types.RecipeID, _ repo.UpdateRecipeArgs) error {
+	return nil
+}
+
+func (r *sqlRecipeRepo) Delete(_ context.Context, _ types.RecipeID) error {
+	return nil
+}
+
 func TestSessionLifecycle_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
