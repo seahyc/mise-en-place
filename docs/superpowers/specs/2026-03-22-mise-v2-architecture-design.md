@@ -61,11 +61,49 @@ Client mic audio
 
 **Target latency**: ~1-1.5s from end-of-speech to first audio chunk.
 
-**Tool calls**: The LLM can emit structured tool calls in its response (navigate step, set timer, mark complete, get cooking state, etc.). These are sent as JSON messages on the WebSocket. The Flutter client handles them identically to the current ElevenLabs tool pattern.
+#### WebSocket Protocol
 
-**Conversation context**: Per-session conversation history maintained server-side. Recipe context (current step, ingredients, active timers) injected as a system message, updated on each turn.
+The voice WebSocket carries two frame types:
+- **Binary frames**: Audio data. Client→server: Opus-encoded, 48kHz, 20ms frames. Server→client: same format (Kokoro outputs PCM, server encodes to Opus before sending).
+- **Text frames**: JSON control messages.
 
-**Fallback**: If Kokoro TTS quality is insufficient, swap to a cheap TTS API (e.g., MiniMax, Fish Audio) — the interface stays the same.
+Client→server JSON messages:
+```json
+{"type": "session_start", "session_id": "uuid", "token": "jwt"}
+{"type": "audio_config", "codec": "opus", "sample_rate": 48000}
+```
+
+Server→client JSON messages:
+```json
+{"type": "transcript", "text": "add the garlic now", "is_final": true}
+{"type": "agent_response", "text": "Sure, adding garlic to step 4"}
+{"type": "tool_call", "tool": "navigate_step", "args": {"step": 4}}
+{"type": "tool_call", "tool": "set_timer", "args": {"label": "garlic", "seconds": 60}}
+{"type": "tts_start"}
+{"type": "tts_end"}
+{"type": "error", "code": "stt_unavailable", "message": "..."}
+```
+
+Audio and JSON messages are distinguished by WebSocket frame type (binary vs text) — no multiplexing envelope needed.
+
+**Reconnection**: On disconnect, the client reconnects with `session_id`. The server persists conversation history in a `conversation_turns` table, so context survives reconnection. Audio-in-flight is lost (acceptable — user just repeats).
+
+**Tool calls**: The LLM can emit structured tool calls in its response (navigate step, set timer, mark complete, get cooking state, etc.). These are sent as JSON text frames. The Flutter client handles them identically to the current ElevenLabs tool pattern.
+
+**Conversation context**: Per-session conversation history stored in `conversation_turns` table and maintained in-memory for the active session. Recipe context (current step, ingredients, active timers) injected as a system message, updated on each turn.
+
+#### Degradation & Fallback Strategy
+
+| Dependency | Failure mode | Detection | Fallback |
+|------------|-------------|-----------|----------|
+| Groq Whisper (STT) | Rate limit or downtime | HTTP 429/5xx | Switch to self-hosted Whisper.cpp on VM (higher latency, ~2-3s) |
+| Kimi/GLM (LLM) | Rate limit or downtime | HTTP 429/5xx, timeout >5s | Try alternate provider (if Kimi fails, try GLM and vice versa). If both fail, degrade to text-only mode: show step text on screen, user taps to advance. |
+| Kokoro (TTS) | Process crash | Health check ping every 30s | Restart sidecar automatically. During downtime, send text responses only (client shows text bubble instead of playing audio). |
+| Silicon Flow (images) | Rate limit or downtime | HTTP 429/5xx | Skip image generation, leave image_url null. Retry in next cleanup cycle. |
+
+The client always has the full session text available locally. Voice is an enhancement — the app remains usable in text-only mode if the voice pipeline degrades.
+
+**Fallback TTS**: If Kokoro quality is insufficient long-term, swap to a cheap TTS API (e.g., MiniMax, Fish Audio) — the `tts.TTSClient` interface stays the same.
 
 ### 2. Video-to-Recipe Ingestion
 
@@ -87,7 +125,13 @@ User shares URL (TikTok / YouTube / any video platform)
 
 **User review**: After ingestion, user sees the parsed recipe and can edit anything before saving. Critical for quality — LLM parsing won't be perfect.
 
-**Job queue**: Simple Postgres table (`jobs`: id, type, status, payload, result, created_at, updated_at). Go goroutines poll or listen via NOTIFY/LISTEN. No Redis, no message broker.
+**Job queue**: Simple Postgres table (see Data Model). Go goroutines poll or listen via NOTIFY/LISTEN. No Redis, no message broker.
+
+**Ingestion security**:
+- URL allowlist: only accept domains from a known list (youtube.com, youtu.be, tiktok.com, instagram.com, etc.). Reject unknown domains.
+- yt-dlp arguments are constructed programmatically (no shell interpolation) — URL passed as a Go string argument to exec.Command, not through a shell.
+- Downloaded media stored in a temp directory with a 500MB per-job limit. Cleaned up after transcription completes.
+- Per-user rate limit: max 10 ingestion jobs per day.
 
 ### 3. Multi-Recipe Runtime Merging
 
@@ -132,13 +176,38 @@ session_steps:
   is_completed, completed_at, agent_notes
 ```
 
-**Users**:
+**Users & Auth**:
 ```
 users:
-  id, email, display_name, password_hash, created_at
+  id, email, display_name, password_hash, google_id, created_at
+
+refresh_tokens:
+  id, user_id, token_hash, expires_at, created_at
+```
+
+**Voice Conversation History** (survives reconnection/restart):
+```
+conversation_turns:
+  id, session_id, role (user/assistant/system), content,
+  tool_calls jsonb, created_at
+```
+
+**Session-Recipe Join Table** (replaces array column):
+```
+session_recipes:
+  session_id, recipe_id
+```
+
+**Job Queue**:
+```
+jobs:
+  id, type (ingest_video/generate_images), status (pending/running/done/failed),
+  payload jsonb, result jsonb, user_id, created_at, updated_at
 ```
 
 No placeholder keys, no step-level ingredient bindings, no unit master table in v1. Pax scaling handled conversationally by the LLM.
+
+**Image storage**: Generated step images are saved to the VM filesystem under `/data/images/{recipe_id}/{step_index}.webp`. Caddy serves `/data/images/` as a static file path. `recipe_steps.image_url` stores the relative path. If the VM dies, images are regenerated from the job queue (idempotent). No external object storage needed at this scale.
 
 ### 5. Backend Architecture (Go)
 
@@ -172,9 +241,36 @@ backend/
 
 **Dependency layers**: `types → config → repo → service → handler`. Enforced by structural tests and custom linter rules.
 
-**Auth**: Simple JWT. Login endpoint returns access token. Client attaches to all requests via Authorization header. Google OAuth handled server-side (exchange code for token).
+#### Auth Flow
+
+**Email/password registration**:
+1. `POST /auth/register` with email + password → server hashes with bcrypt, stores in `users` table, returns JWT access token (1h expiry) + refresh token (30d expiry, stored in `refresh_tokens` table).
+2. `POST /auth/login` with email + password → verify hash → return tokens.
+3. `POST /auth/refresh` with refresh token → validate, rotate, return new token pair.
+4. Client stores tokens in secure storage (`flutter_secure_storage`). Attaches access token via `Authorization: Bearer <token>` header. Silent refresh on 401.
+
+**Google OAuth (mobile)**:
+1. Client uses `google_sign_in` Flutter package → gets Google ID token.
+2. `POST /auth/google` with Google ID token → server verifies with Google's public keys, creates/finds user, returns JWT token pair.
+3. No server-side redirect flow needed — the Flutter package handles the native OAuth UI.
+
+**No migration from Supabase Auth**: The current prototype has minimal test data. Fresh start.
 
 **Deployment**: `docker compose up -d` on Oracle VM. Caddy handles HTTPS.
+
+#### VM Resource Budget (Oracle ARM A1: 4 OCPU / 24 GB RAM)
+
+| Service | CPU | RAM | Notes |
+|---------|-----|-----|-------|
+| Postgres | 0.5 OCPU | 2 GB | Shared buffers 512MB, plenty for <100 users |
+| Go server | 0.5 OCPU | 512 MB | Goroutines are cheap, even with concurrent WebSockets |
+| Kokoro TTS | 1 OCPU | 4 GB | Largest consumer. Single model instance, requests queued. |
+| Whisper.cpp (fallback) | 1 OCPU | 2 GB | Only loaded when Groq is unavailable |
+| Caddy | negligible | 64 MB | |
+| yt-dlp + ffmpeg | 0.5 OCPU (burst) | 512 MB | Runs during ingestion only |
+| **Headroom** | **1 OCPU** | **~15 GB** | Comfortable margin |
+
+**Concurrent load**: Kokoro processes TTS requests sequentially per instance. With ~1.5s synthesis per response, a single instance handles ~40 responses/minute — sufficient for 3-5 simultaneous cooking sessions. If contention occurs, add a second Kokoro instance (RAM allows it).
 
 ### 6. Flutter Client Changes
 
@@ -196,7 +292,11 @@ backend/
 - Tool call handling (navigate, timer, mark complete — same interface, different transport)
 - Timer manager
 
+**State management**: Riverpod (migration from Provider). Typed, testable, supports code generation. Each service exposed as a provider; controllers as StateNotifier/AsyncNotifier.
+
 **Data model simplification**: No placeholder keys, no step-level bindings. Recipes are freeform text. Pax scaling is conversational.
+
+**Offline/poor connectivity**: Recipes are cached locally (SQLite via `drift`). If WebSocket drops during cooking, the client shows step text and allows manual tap-to-advance. Voice resumes on reconnection with conversation context preserved server-side. Browsing and recipe editing work offline against local cache, synced on reconnect.
 
 ```
 app/
@@ -290,6 +390,10 @@ On merge to main:
   ├─ Build Docker images
   └─ Deploy to Oracle VM (docker compose)
 ```
+
+### Logging
+
+Structured JSON logging via `slog` (Go stdlib). Every request gets a `request_id`; voice sessions get a `session_id`. Logs written to stdout, Caddy captures and rotates via systemd journal or `logrotate`. No external log aggregation — `journalctl` and `jq` are sufficient at this scale.
 
 ### What We're NOT Doing (YAGNI)
 
