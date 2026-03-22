@@ -168,7 +168,7 @@ recipe_steps:
 **Cooking Session** (runtime):
 ```
 cooking_sessions:
-  id, user_id, source_recipe_ids[], status (setup/in_progress/paused/completed),
+  id, user_id, status (setup/in_progress/paused/completed),
   created_at, started_at, completed_at
 
 session_steps:
