@@ -1,0 +1,8 @@
+:80 {
+    reverse_proxy server:8080
+
+    handle_path /images/* {
+        root * /data/images
+        file_server
+    }
+}

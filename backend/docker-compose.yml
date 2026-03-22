@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mise
+      POSTGRES_USER: mise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mise -d mise"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://mise:${POSTGRES_PASSWORD}@postgres:5432/mise?sslmode=disable", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  server:
+    build: .
+    environment:
+      DATABASE_URL: postgres://mise:${POSTGRES_PASSWORD}@postgres:5432/mise?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      LISTEN_ADDR: :8080
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      KIMI_API_KEY: ${KIMI_API_KEY:-}
+      GLM_API_KEY: ${GLM_API_KEY:-}
+      SILICON_FLOW_KEY: ${SILICON_FLOW_KEY:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi:latest
+    ports:
+      - "8880:8880"
+    volumes:
+      - kokoro_models:/app/models
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8880/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+      - image_data:/data/images
+    depends_on:
+      - server
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+  image_data:
+  kokoro_models:
