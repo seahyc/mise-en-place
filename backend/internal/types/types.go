@@ -78,3 +78,16 @@ const (
 	JobDone    JobStatus = "done"
 	JobFailed  JobStatus = "failed"
 )
+
+// Job represents a background processing job.
+type Job struct {
+	ID        string         `json:"id"`
+	Type      JobType        `json:"type"`
+	Status    JobStatus      `json:"status"`
+	Payload   map[string]any `json:"payload"`
+	Result    map[string]any `json:"result,omitempty"`
+	Error     string         `json:"error,omitempty"`
+	UserID    UserID         `json:"user_id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+}
