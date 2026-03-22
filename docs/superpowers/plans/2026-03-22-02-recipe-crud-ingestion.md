@@ -279,6 +279,20 @@ cmd := exec.CommandContext(ctx, "yt-dlp",
 )
 ```
 
+**Testing yt-dlp execution**: Put yt-dlp behind an interface:
+```go
+type MediaExtractor interface {
+    Extract(ctx context.Context, url string, outputDir string) (*ExtractionResult, error)
+}
+type ExtractionResult struct {
+    AudioPath    string
+    Title        string
+    Description  string
+    Comments     []string
+}
+```
+Unit tests use a stub extractor returning canned `ExtractionResult` with pre-existing audio files in `test/testdata/`. Integration tests can call the real yt-dlp if available (`if _, err := exec.LookPath("yt-dlp"); err != nil { t.Skip("yt-dlp not installed") }`).
+
 - [ ] **Step 6: Run tests to verify they pass**
 - [ ] **Step 7: Commit**
 
@@ -291,11 +305,33 @@ cmd := exec.CommandContext(ctx, "yt-dlp",
 - Create: `backend/internal/worker/worker.go`
 - Create: `backend/internal/worker/worker_test.go`
 
-- [ ] **Step 1: Write JobRepo**
+- [ ] **Step 1: Write failing test for JobRepo interface + Worker**
 
-Methods: `Create`, `GetByID`, `ClaimNext(type) (*Job, error)` (atomic: set status=running WHERE status=pending), `Complete`, `Fail`.
+```go
+func TestWorkerProcessesJob(t *testing.T) {
+    stub := &stubJobRepo{jobs: []Job{{ID: "j1", Type: "test", Status: JobPending, Payload: map[string]any{}}}}
+    processed := false
+    w := worker.New(stub, "test", func(ctx context.Context, job *Job) error {
+        processed = true
+        return nil
+    })
+    ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+    defer cancel()
+    go w.Run(ctx)
+    time.Sleep(500 * time.Millisecond)
+    cancel()
+    if !processed { t.Error("expected job to be processed") }
+    if stub.jobs[0].Status != JobDone { t.Error("expected job marked done") }
+}
+```
 
-- [ ] **Step 2: Write worker loop**
+- [ ] **Step 2: Run test to verify it fails**
+
+- [ ] **Step 3: Write JobRepo**
+
+Methods: `Create`, `GetByID`, `ClaimNext(type) (*Job, error)` (atomic: `UPDATE jobs SET status='running' WHERE id = (SELECT id FROM jobs WHERE status='pending' AND type=$1 ORDER BY created_at LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *`), `Complete`, `Fail`.
+
+- [ ] **Step 4: Write worker loop**
 
 ```go
 func (w *Worker) Run(ctx context.Context) {
@@ -306,21 +342,21 @@ func (w *Worker) Run(ctx context.Context) {
         default:
             job, err := w.jobs.ClaimNext(ctx, w.jobType)
             if job == nil {
-                time.Sleep(2 * time.Second) // no work
+                time.Sleep(2 * time.Second)
                 continue
             }
-            if err := w.process(ctx, job); err != nil {
+            if err := w.handler(ctx, job); err != nil {
                 w.jobs.Fail(ctx, job.ID, err.Error())
             } else {
-                w.jobs.Complete(ctx, job.ID, result)
+                w.jobs.Complete(ctx, job.ID, nil)
             }
         }
     }
 }
 ```
 
-- [ ] **Step 3: Write test with stub job repo**
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Run test to verify it passes**
+- [ ] **Step 6: Commit**
 
 ---
 

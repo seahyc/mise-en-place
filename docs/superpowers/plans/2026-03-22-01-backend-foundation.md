@@ -345,6 +345,7 @@ CREATE INDEX idx_recipes_user ON recipes(user_id);
 CREATE TABLE recipe_ingredients (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    order_index INT NOT NULL DEFAULT 0,
     text TEXT NOT NULL
 );
 CREATE INDEX idx_recipe_ingredients_recipe ON recipe_ingredients(recipe_id);
@@ -935,6 +936,8 @@ func (s *AuthService) issueTokens(ctx context.Context, userID types.UserID) (*To
 	}, nil
 }
 ```
+
+**Google OAuth**: Add `GoogleLogin(ctx, googleIDToken string) (*TokenPair, error)` to AuthService. Verify the Google ID token by fetching Google's public keys from `https://www.googleapis.com/oauth2/v3/certs` and validating the JWT. Extract email + name from claims. Create or find user by `google_id`. Issue token pair. Add handler `POST /auth/google` with `{"id_token": "..."}`. Add dependency: `go get google.golang.org/api/idtoken`.
 
 Note: The `types.User` struct needs a `PasswordHash` field. Update `backend/internal/types/types.go` — add `PasswordHash string` to the User struct (not in JSON output):
 ```go
@@ -1540,6 +1543,18 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi:latest
+    ports:
+      - "8880:8880"
+    volumes:
+      - kokoro_models:/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8880/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   caddy:
     image: caddy:2-alpine
     ports:
@@ -1558,6 +1573,7 @@ volumes:
   caddy_data:
   caddy_config:
   image_data:
+  kokoro_models:
 ```
 
 - [ ] **Step 3: Write Caddyfile**
@@ -1775,6 +1791,94 @@ Expected: PASS (requires Docker running locally)
 ```bash
 git add backend/test/integration/ backend/go.mod backend/go.sum
 git commit -m "feat(backend): add integration test infra with testcontainers-go"
+```
+
+---
+
+---
+
+### Task 10: CI Pipeline (GitHub Actions)
+
+**Files:**
+- Create: `backend/.github/workflows/ci.yml`
+
+- [ ] **Step 1: Write CI workflow**
+
+Create `.github/workflows/ci.yml` (at repo root, not backend/):
+```yaml
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+      - uses: golangci/golangci-lint-action@v4
+        with: { working-directory: backend }
+
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+      - run: cd backend && go test ./... -short -count=1
+
+  backend-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: mise_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 3s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+      - run: cd backend && go test ./test/integration/ -v -count=1
+        env:
+          DATABASE_URL: postgres://test:test@localhost:5432/mise_test?sslmode=disable
+
+  flutter-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.x' }
+      - run: cd app_v2 && flutter pub get && flutter analyze
+
+  flutter-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.x' }
+      - run: cd app_v2 && flutter pub get && flutter test
+
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+      - run: cd backend && go test ./test/ -v -run TestDependencyLayers
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add .github/workflows/ci.yml
+git commit -m "ci: add GitHub Actions pipeline for backend + Flutter"
 ```
 
 ---

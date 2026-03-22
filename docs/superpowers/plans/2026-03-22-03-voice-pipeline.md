@@ -44,7 +44,20 @@ Test that a stub TTS client satisfies the interface. Test that KokoroClient cons
 
 - [ ] **Step 3: Implement KokoroClient**
 
-Kokoro runs as an HTTP server sidecar (e.g., `kokoro-serve` or a Python FastAPI wrapper). KokoroClient POSTs text to `http://localhost:8880/synthesize`, receives PCM audio bytes. For streaming: use chunked transfer encoding or SSE from Kokoro.
+Kokoro runs as `ghcr.io/remsky/kokoro-fastapi` (see Plan 1 docker-compose.yml). This is a FastAPI server wrapping Kokoro ONNX. API contract:
+
+**POST `http://localhost:8880/v1/audio/speech`** (OpenAI-compatible):
+```json
+{
+  "model": "kokoro",
+  "input": "Hello, let's add the garlic now",
+  "voice": "af_sarah",
+  "response_format": "pcm",
+  "stream": true
+}
+```
+Response: streaming PCM audio (16-bit, 24kHz mono) when `stream: true`, or full audio bytes when `stream: false`.
+Health check: `GET http://localhost:8880/health` → 200.
 
 ```go
 type KokoroClient struct {
@@ -53,11 +66,19 @@ type KokoroClient struct {
 }
 
 func (c *KokoroClient) Synthesize(ctx context.Context, text string) ([]byte, error) {
-    body, _ := json.Marshal(map[string]string{"text": text})
-    req, _ := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/synthesize", bytes.NewReader(body))
+    body, _ := json.Marshal(map[string]any{
+        "model": "kokoro", "input": text, "voice": "af_sarah",
+        "response_format": "pcm", "stream": false,
+    })
+    req, _ := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/v1/audio/speech", bytes.NewReader(body))
     req.Header.Set("Content-Type", "application/json")
     resp, err := c.httpClient.Do(req)
-    // read audio bytes from response body
+    // read PCM audio bytes from response body
+}
+
+func (c *KokoroClient) SynthesizeStream(ctx context.Context, text string, out chan<- []byte) error {
+    // Same endpoint with "stream": true
+    // Read chunked response body, send PCM chunks to channel
 }
 ```
 
@@ -167,18 +188,29 @@ type VAD interface {
 
 - [ ] **Step 2: Implement energy-based VAD as simple fallback**
 
-Simple approach: compute RMS energy of frame, compare to threshold. Track consecutive silent frames to detect end-of-speech. This works for v1 and avoids ONNX runtime dependency.
+**Important**: VAD operates on PCM samples, not Opus frames. Incoming audio arrives as Opus over WebSocket, so it must be decoded to PCM first (using Task 6's Opus decoder). The WebSocket handler decodes Opus → PCM, then feeds PCM frames to VAD.
+
+Simple approach: compute RMS energy of PCM int16 frame, compare to threshold. Track consecutive silent frames to detect end-of-speech. This works for v1 and avoids ONNX runtime dependency.
 
 ```go
 type EnergyVAD struct {
     threshold       float32
     silenceFrames   int
-    maxSilence      int // frames of silence before end-of-speech
+    maxSilence      int // frames of silence before end-of-speech (e.g., 30 frames = 600ms at 20ms/frame)
+}
+
+// ProcessFrame takes PCM int16 samples (NOT Opus-encoded).
+func (v *EnergyVAD) ProcessFrame(pcmSamples []int16) VADResult {
+    rms := computeRMS(pcmSamples)
+    isSpeech := rms > v.threshold
+    // track silence duration...
 }
 ```
 
-- [ ] **Step 3: Test with known audio samples** (silent frame → not speech, loud frame → speech)
+- [ ] **Step 3: Test with known PCM samples** — array of zeros → not speech, array of loud samples → speech, silence after speech → end-of-speech detected
 - [ ] **Step 4: Commit**
+
+**Note on Task ordering**: Task 6 (Opus encode/decode) should complete before Task 5 (Pipeline integration), since the pipeline needs to decode Opus to PCM for both VAD and STT.
 
 ---
 
@@ -278,7 +310,30 @@ func EncodePCMToOpus(pcm []int16, sampleRate, channels, frameSize int) ([]byte, 
 
 Test: when STT returns error, pipeline switches to fallback STT. When both LLM providers fail, pipeline returns text-only response.
 
-- [ ] **Step 2: Implement FallbackSTT**
+- [ ] **Step 2: Implement WhisperCppClient (local STT fallback)**
+
+```go
+// backend/internal/stt/whispercpp.go
+type WhisperCppClient struct {
+    modelPath string // path to whisper model file (e.g., /models/ggml-base.bin)
+}
+
+func (c *WhisperCppClient) Transcribe(ctx context.Context, audioData []byte, format string) (string, error) {
+    // Write audio to temp WAV file
+    // Run: whisper-cli -m <model> -f <wav> --output-txt --no-timestamps
+    // Read output text file
+    // Clean up temp files
+    cmd := exec.CommandContext(ctx, "whisper-cli",
+        "-m", c.modelPath, "-f", tmpWavPath,
+        "--output-txt", "--no-timestamps",
+    )
+    // ...
+}
+```
+
+Add whisper.cpp binary to Docker image or as a sidecar. For the Oracle VM: install via `apt install whisper.cpp` or build from source. Model file (~150MB for base) stored on VM disk.
+
+- [ ] **Step 3: Implement FallbackSTT**
 
 ```go
 type FallbackSTTClient struct {

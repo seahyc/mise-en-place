@@ -37,6 +37,7 @@ dependencies:
   flutter_riverpod: ^2.5.0
   riverpod_annotation: ^2.3.0
   dio: ^5.4.0
+  google_sign_in: ^6.2.0
   web_socket_channel: ^2.4.0
   flutter_secure_storage: ^9.0.0
   drift: ^2.15.0
@@ -60,7 +61,7 @@ dev_dependencies:
 - [ ] **Step 3: Configure strict analysis_options.yaml**
 
 ```yaml
-include: package:flutter_lints/flutter.yaml
+include: package:lints/recommended.yaml
 
 analyzer:
   strict-casts: true
@@ -217,6 +218,7 @@ class ApiClient {
   // Auth
   Future<TokenPair> register(String email, String password, String name);
   Future<TokenPair> login(String email, String password);
+  Future<TokenPair> loginWithGoogle(String googleIdToken);
   Future<TokenPair> refresh(String refreshToken);
 
   // Recipes
@@ -360,11 +362,11 @@ Handle binary vs text frames. Binary → AudioEvent. Text → parse JSON → app
 
 - [ ] **Step 3: Add microphone capture**
 
-Use `record` package or `flutter_sound` to capture mic audio, encode to Opus, send via `sendAudio`.
+Use `flutter_sound` for mic capture (PCM) + `opus_dart` for encoding to Opus before sending via `sendAudio`. Add both to pubspec.yaml: `flutter_sound: ^9.0.0`, `opus_dart: ^4.0.0`.
 
 - [ ] **Step 4: Add audio playback**
 
-Receive AudioEvents, decode Opus, play through speaker. Use `just_audio` or direct PCM playback.
+Receive AudioEvents (Opus), decode via `opus_dart` to PCM, play through `flutter_sound` player.
 
 - [ ] **Step 5: Run tests**
 - [ ] **Step 6: Commit**
@@ -453,7 +455,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 ```
 
-- [ ] **Step 2: Implement login/register screens**
+- [ ] **Step 2: Implement login/register screens with Google Sign-In button**
+
+Login screen includes email/password form AND a "Sign in with Google" button. Google button uses `google_sign_in` package → gets ID token → calls `apiClient.loginWithGoogle(idToken)`.
+
+
 - [ ] **Step 3: Write golden tests**
 - [ ] **Step 4: Commit**
 
@@ -527,4 +533,32 @@ Task 9 (offline cache) can run after Task 2
 Task 10 (patrol) requires Tasks 4, 7, 8
 ```
 
-**Parallelizable**: Tasks 4, 5, 6, 8, 9 can run in parallel after Task 3.
+---
+
+### Task 11: Rename app_v2 → app
+
+**Files:**
+- Rename: `app_v2/` → `app/`
+- Modify: `.github/workflows/ci.yml` (update paths)
+
+- [ ] **Step 1: Remove old app directory**
+
+```bash
+rm -rf app/
+mv app_v2/ app/
+```
+
+- [ ] **Step 2: Update CI paths from `app_v2` to `app`**
+- [ ] **Step 3: Run all tests to verify nothing broke**
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A
+git commit -m "refactor: rename app_v2 to app, remove old prototype"
+```
+
+**Note**: Only do this after all other tasks are complete and the new client is working.
+
+---
+
+**Parallelizable**: Tasks 4, 5, 6, 8, 9 can run in parallel after Task 3. Task 11 is the very last task.
