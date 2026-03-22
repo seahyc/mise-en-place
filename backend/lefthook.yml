@@ -1,0 +1,9 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      run: cd backend && golangci-lint run ./...
+    test:
+      run: cd backend && go test ./... -short -count=1
+    build:
+      run: cd backend && go build ./...
