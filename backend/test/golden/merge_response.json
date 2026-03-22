@@ -1,0 +1,9 @@
+[
+  {"order_index": 0, "text": "Boil water and cook spaghetti", "source_dish_tag": "Pasta Carbonara"},
+  {"order_index": 1, "text": "While pasta cooks, wash and chop romaine lettuce", "source_dish_tag": "Caesar Salad"},
+  {"order_index": 2, "text": "Fry pancetta until crispy", "source_dish_tag": "Pasta Carbonara"},
+  {"order_index": 3, "text": "Make caesar dressing", "source_dish_tag": "Caesar Salad"},
+  {"order_index": 4, "text": "Mix eggs and parmesan", "source_dish_tag": "Pasta Carbonara"},
+  {"order_index": 5, "text": "Toss lettuce with dressing and croutons", "source_dish_tag": "Caesar Salad"},
+  {"order_index": 6, "text": "Combine pasta with pancetta and egg mixture", "source_dish_tag": "Pasta Carbonara"}
+]
