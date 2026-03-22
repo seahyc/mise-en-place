@@ -66,6 +66,15 @@ type SessionStep struct {
 	AgentNotes    string     `json:"agent_notes,omitempty"`
 }
 
+type ConversationTurn struct {
+	ID        string         `json:"id"`
+	SessionID SessionID      `json:"session_id"`
+	Role      string         `json:"role"` // user, assistant, system
+	Content   string         `json:"content"`
+	ToolCalls map[string]any `json:"tool_calls,omitempty"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
 type JobType string
 type JobStatus string
 
