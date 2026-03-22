@@ -112,7 +112,7 @@ CREATE TABLE jobs (
     status     TEXT        NOT NULL DEFAULT 'pending',
     payload    JSONB       NOT NULL DEFAULT '{}',
     result     JSONB,
-    user_id    UUID        REFERENCES users(id) ON DELETE CASCADE,
+    user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
