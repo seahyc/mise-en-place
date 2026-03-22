@@ -19,12 +19,17 @@
 **Light mode:**
 - Background: #FAF7F2 (warm cream)
 - Surface: #FFFFFF
+- Border: rgba(0,0,0,0.06-0.10)
+- Text primary: #1A1A1A
+- Text secondary: rgba(0,0,0,0.5)
+- Text tertiary: rgba(0,0,0,0.3)
+- Frosted glass: `rgba(255,255,255,0.7)` + `backdrop-filter: blur(24px)` + `border: 1px solid rgba(0,0,0,0.06)`
 - Accent colors remain the same
 
 **Accent colors:**
 - Primary: #FF9F0A (amber) — timers, active states, amounts, CTAs
 - Success: #30D158 (green) — completed steps, voice listening indicator
-- Multi-recipe dish tags: green (#30D158), amber (#FF9F0A), blue (#6382FF), purple — one per recipe
+- Multi-recipe dish tags: green (#30D158), amber (#FF9F0A), blue (#6382FF), purple (#BF5AF2) — one per recipe. If 5+ dishes, cycle from green.
 
 ### Typography
 
@@ -98,7 +103,7 @@ Split layout — cinematic image left, structured content right.
 - `max-width: 200px`
 
 **Right panel (55% width):**
-- Top bar: recipe name (small caps, dimmed) + step dots (numbered circles — done ✓ green / active amber / upcoming dimmed)
+- Top bar: recipe name (small caps, dimmed) + step dots (26px circles, 6px gap — done ✓ green / active amber / upcoming dimmed). If 10+ steps, show scrollable horizontal row with active dot centered. Number inside each dot (11px, semibold).
 - Center (vertically centered):
   - "STEP N" label (12px, amber, uppercase)
   - Step text (32px, semibold)
@@ -130,7 +135,7 @@ Split layout — cinematic image left, structured content right.
 
 - Full-screen single column, dark background
 - Step text large and centered
-- Ingredient panel as collapsible row at top (tap to expand, emoji pills)
+- Ingredient panel as collapsible row at top: **collapsed** shows a single row of emoji circles (just the emojis, 28px each, horizontally scrollable). **Tap to expand:** slides down to show full ingredient list (emoji + amount + name per row, max height 40% of screen, scrollable). Pushes step text down (not overlay).
 - Timer chips below step text
 - Voice bar fixed at bottom
 - No image panel (too narrow)
@@ -205,20 +210,31 @@ Switches from masonry to horizontal card row:
 
 ## Screen: Recipe Edit
 
-- Inline editing of title, description
-- Ingredient rows: editable text, emoji auto-suggested
-- Steps: drag to reorder, tap to edit, swipe to delete
-- Save: creates changelog entry (auto-diff + optional user note)
-- Cancel discards
+Full-screen route (not overlay). Same layout as detail screen but all fields become editable.
+
+- **Title:** large editable text field at top
+- **Description:** multi-line editable below title
+- **Ingredients:** each row has emoji (auto-suggested as user types ingredient name) + editable text. Swipe row to delete. "Add ingredient" button at bottom.
+- **Steps:** numbered cards, each with editable text area. Drag handle on left for reorder. Swipe to delete. "Add step" button at bottom.
+- **Keyboard avoidance:** scroll to keep active field above keyboard
+- **Top bar:** "Cancel" (left, text button) + "Save" (right, amber button)
+- **Save behavior:** auto-diffs changes, creates changelog entry. Optional note sheet slides up: "What did you change?" with text field + "Save" button. Skip to save without note.
+- **Cancel:** if changes exist, confirm sheet: "Discard changes?"
 
 ---
 
 ## Screen: Recipe Changelog
 
-- Accessible from detail screen via "📝 N edits" pill
-- Timeline of changes, newest first
-- Each entry: timestamp, description of what changed
-- Example: "Mar 15 — Changed fish sauce from 3 tbsp to 2 tbsp. Added lime juice. Note: 'reduced salt for the kids'"
+Bottom sheet, slides up from detail screen when "📝 N edits" pill is tapped.
+
+- **Header:** "Edit History" + close button (×)
+- **Timeline:** vertical list, newest first. Each entry:
+  - Amber dot on left edge (timeline line connecting dots)
+  - Date (13px, dimmed)
+  - Change description (14px) — auto-generated diff text
+  - User note in italics if present (13px, dimmed)
+- Example entry: "**Mar 15** — Changed fish sauce from 3 tbsp to 2 tbsp. Added lime juice. *'reduced salt for the kids'*"
+- Max height: 70% of screen. Scrollable.
 
 ---
 
@@ -235,21 +251,42 @@ Switches from masonry to horizontal card row:
 
 ## Screen: Cook Session Setup
 
-- Multi-recipe selection: toggle recipes on/off from library
-- Selected recipes shown as cards with checkmarks
-- "Start Cooking" button shows count: "🍳 Cook 3 recipes"
-- If multi-recipe: loading state "Merging recipes into one session..." (3-5 seconds)
-- Transitions to cooking mode
+Bottom sheet slides up from recipe detail's "Start Cooking" button.
+
+- **Header:** "What are you cooking?"
+- **Selected recipe** shown as a compact card with checkmark
+- **"Add another recipe" button** — opens recipe picker (mini browse grid as a modal). Tap to toggle selection. Selected recipes show checkmarks.
+- **Selected recipes list:** horizontal scroll of compact cards with "×" to remove
+- **Servings adjuster:** stepper control (- 2 +) per recipe (LLM handles scaling conversationally)
+- **"Start Cooking" button:** full-width amber, shows count: "🍳 Cook 3 recipes"
+- **Loading state (multi-recipe):** full-screen dark overlay with centered spinner + "Merging your recipes..." text. Subtle food emoji rotating (🍳→🥘→🍜). Takes 3-5 seconds, then transitions to cooking mode.
+
+## Screen: Import (URL Ingestion)
+
+Bottom sheet or full-screen route depending on entry point.
+
+- **URL field:** large, auto-focused. Pre-filled if shared from another app.
+- **Platform detection:** once URL is recognized, shows icon + "TikTok recipe detected" or "YouTube video detected" in green.
+- **"Import Recipe" button:** amber, below URL field
+- **Progress:** vertical step list (not a bar). Each step has a circle indicator:
+  - ⏳ Downloading video...
+  - ⏳ Transcribing audio...
+  - ⏳ Extracting recipe...
+  - ⏳ Generating step images...
+  - Steps turn ✅ as they complete
+- **Auto-transitions** to recipe edit screen on completion (no tap needed). User reviews parsed data and saves.
 
 ---
 
 ## Responsive Strategy
 
 Single Flutter app, responsive:
-- **iPad landscape:** Full experience — masonry browse, split cooking mode, side panels
-- **iPad portrait:** 3-column masonry, same cooking mode (slightly narrower panels)
-- **Phone:** Single column browse, full-screen cooking mode (text + voice, no image panel)
+- **iPad landscape:** Full experience — 4-col masonry browse, split cooking mode (45/55)
+- **iPad portrait:** 3-col masonry browse. Cooking mode keeps split layout but image panel shrinks to 35% width. If width < 700px, collapse to phone cooking layout.
+- **Phone:** 2-col masonry browse with bottom tab bar. Full-screen cooking mode (text + voice, no image panel). FAB sits above tab bar (bottom-right, 16px above tab bar top edge).
 - Breakpoints: phone < 600px, tablet 600-1024px, large tablet > 1024px
+
+**Timer interaction:** Tap timer chip to expand into a control row: time display + pause/resume button + cancel (×) button. Tap elsewhere to collapse back to chip. Long-press to cancel with confirmation.
 
 ---
 
