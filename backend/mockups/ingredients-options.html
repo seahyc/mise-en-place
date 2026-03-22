@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mise en Place — Ingredient Integration Options</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; }
+.page-header { text-align: center; padding: 48px 24px 32px; }
+.page-header h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
+.page-header p { font-size: 15px; color: rgba(255,255,255,0.4); margin-top: 8px; }
+.mockup-section { max-width: 1100px; margin: 0 auto 56px; padding: 0 24px; }
+.mockup-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.3); margin-bottom: 12px; font-weight: 600; }
+.mockup-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+.mockup-desc { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 24px; line-height: 1.5; }
+.ipad-frame { background: #111; border-radius: 24px; padding: 12px; border: 2px solid #2a2a2a; aspect-ratio: 4/3; overflow: hidden; }
+.divider { max-width: 1100px; margin: 0 auto 48px; height: 1px; background: rgba(255,255,255,0.06); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes wave { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+@keyframes breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(48,209,88,0.3); } 50% { box-shadow: 0 0 0 8px rgba(48,209,88,0); } }
+
+/* Shared layout */
+.hybrid { height: 100%; position: relative; display: flex; overflow: hidden; border-radius: 12px; }
+.image-side { flex: 0 0 45%; position: relative; overflow: hidden; }
+.image-side img { width: 100%; height: 100%; object-fit: cover; }
+.image-side .overlay { position: absolute; inset: 0; background: linear-gradient(to right, transparent 60%, #0a0a0a 100%); }
+.image-side .vignette { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.4) 100%); }
+.content-side { flex: 1; background: #0a0a0a; display: flex; flex-direction: column; padding: 28px 36px; position: relative; z-index: 2; }
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.recipe-name { font-size: 12px; color: rgba(255,255,255,0.35); letter-spacing: 1.2px; text-transform: uppercase; font-weight: 500; }
+.step-dots { display: flex; gap: 6px; }
+.step-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+.step-dot.done { background: rgba(48,209,88,0.12); color: #30D158; }
+.step-dot.active { background: #FF9F0A; color: #000; }
+.step-dot.upcoming { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); }
+.step-area { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.step-number { font-size: 12px; color: #FF9F0A; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 12px; text-transform: uppercase; }
+.step-text { font-size: 32px; font-weight: 600; line-height: 1.28; letter-spacing: -0.6px; margin-bottom: 14px; }
+.step-detail { font-size: 15px; color: rgba(255,255,255,0.4); line-height: 1.65; }
+.timer-row { margin-top: 20px; display: flex; gap: 10px; }
+.timer-chip { background: rgba(255,159,10,0.08); border: 1px solid rgba(255,159,10,0.18); border-radius: 14px; padding: 10px 18px; display: flex; align-items: center; gap: 10px; }
+.timer-chip .dot { width: 7px; height: 7px; background: #FF9F0A; border-radius: 50%; animation: pulse 2s infinite; }
+.timer-chip .time { font-size: 18px; color: #FF9F0A; font-weight: 500; font-variant-numeric: tabular-nums; }
+.timer-chip .label { font-size: 12px; color: rgba(255,159,10,0.45); }
+.voice-bar { margin-top: auto; padding-top: 16px; }
+.voice-strip { background: rgba(255,255,255,0.03); border-radius: 16px; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+.voice-orb { width: 34px; height: 34px; border-radius: 50%; background: rgba(48,209,88,0.1); display: flex; align-items: center; justify-content: center; animation: breathe 3s infinite; }
+.voice-orb-inner { width: 13px; height: 13px; border-radius: 50%; background: #30D158; }
+.voice-bars { display: flex; gap: 2.5px; align-items: end; }
+.voice-bars .vb { width: 2.5px; border-radius: 1.5px; background: rgba(255,255,255,0.3); animation: wave 1.4s ease-in-out infinite; }
+.voice-bars .vb:nth-child(1) { height: 10px; animation-delay: 0s; }
+.voice-bars .vb:nth-child(2) { height: 16px; animation-delay: 0.1s; }
+.voice-bars .vb:nth-child(3) { height: 24px; animation-delay: 0.2s; }
+.voice-bars .vb:nth-child(4) { height: 18px; animation-delay: 0.3s; }
+.voice-bars .vb:nth-child(5) { height: 12px; animation-delay: 0.4s; }
+.voice-bars .vb:nth-child(6) { height: 20px; animation-delay: 0.5s; }
+.voice-bars .vb:nth-child(7) { height: 8px; animation-delay: 0.6s; }
+.voice-status { font-size: 12px; color: rgba(255,255,255,0.25); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Ingredient Integration</h1>
+  <p>Three ways to show step ingredients. All with emoji.</p>
+</div>
+
+<!-- OPTION A: Frosted glass strip at bottom of image -->
+<div class="mockup-section">
+  <div class="mockup-label">Option A</div>
+  <div class="mockup-title">Frosted Glass Strip</div>
+  <div class="mockup-desc">Ingredients sit in a frosted glass bar at the bottom of the image — part of the image, not floating over it. Feels like iOS notification grouping.</div>
+
+  <div class="ipad-frame">
+    <div class="hybrid">
+      <div class="image-side">
+        <img src="https://images.unsplash.com/photo-1559314809-0d155014e29e?w=1000&q=80" alt="Pad Thai">
+        <div class="overlay"></div>
+        <div class="vignette"></div>
+        <!-- Frosted strip at bottom -->
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; background: rgba(0,0,0,0.5); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.06); padding: 14px 20px;">
+          <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,0.8);">
+              <span>🥜</span>
+              <span style="color: #FF9F0A; font-weight: 500;">2 tbsp</span>
+              <span style="color: rgba(255,255,255,0.6);">oil</span>
+            </div>
+            <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.1); align-self: center;"></div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,0.8);">
+              <span>🥚</span>
+              <span style="color: #FF9F0A; font-weight: 500;">2</span>
+              <span style="color: rgba(255,255,255,0.6);">eggs, beaten</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="content-side">
+        <div class="top-bar">
+          <div class="recipe-name">Pad Thai</div>
+          <div class="step-dots">
+            <div class="step-dot done">&#10003;</div>
+            <div class="step-dot active">2</div>
+            <div class="step-dot upcoming">3</div>
+            <div class="step-dot upcoming">4</div>
+          </div>
+        </div>
+        <div class="step-area">
+          <div class="step-number">Step 2</div>
+          <div class="step-text">Heat wok over high heat, add oil, scramble eggs until just set</div>
+          <div class="step-detail">Use a well-seasoned wok. The oil should shimmer and lightly smoke before adding beaten eggs.</div>
+          <div class="timer-row">
+            <div class="timer-chip"><div class="dot"></div><span class="time">2:34</span><span class="label">noodles soaking</span></div>
+          </div>
+        </div>
+        <div class="voice-bar">
+          <div class="voice-strip">
+            <div class="voice-orb"><div class="voice-orb-inner"></div></div>
+            <div class="voice-bars"><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div></div>
+            <span class="voice-status">Listening...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- OPTION B: Inline in content side, below step detail -->
+<div class="mockup-section">
+  <div class="mockup-label">Option B</div>
+  <div class="mockup-title">Inline Ingredient Row</div>
+  <div class="mockup-desc">Ingredients are part of the step content — between the detail text and the timer. Clean, structured, no layering complexity. Like a recipe card's ingredient line.</div>
+
+  <div class="ipad-frame">
+    <div class="hybrid">
+      <div class="image-side">
+        <img src="https://images.unsplash.com/photo-1559314809-0d155014e29e?w=1000&q=80" alt="Pad Thai">
+        <div class="overlay"></div>
+        <div class="vignette"></div>
+      </div>
+      <div class="content-side">
+        <div class="top-bar">
+          <div class="recipe-name">Pad Thai</div>
+          <div class="step-dots">
+            <div class="step-dot done">&#10003;</div>
+            <div class="step-dot active">2</div>
+            <div class="step-dot upcoming">3</div>
+            <div class="step-dot upcoming">4</div>
+          </div>
+        </div>
+        <div class="step-area">
+          <div class="step-number">Step 2</div>
+          <div class="step-text">Heat wok over high heat, add oil, scramble eggs until just set</div>
+          <div class="step-detail">Use a well-seasoned wok. The oil should shimmer and lightly smoke before adding beaten eggs.</div>
+
+          <!-- Ingredients inline -->
+          <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 8px 14px;">
+              <span style="font-size: 18px;">🥜</span>
+              <div>
+                <div style="font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 500;">2 tbsp oil</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 8px 14px;">
+              <span style="font-size: 18px;">🥚</span>
+              <div>
+                <div style="font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 500;">2 eggs, beaten</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="timer-row">
+            <div class="timer-chip"><div class="dot"></div><span class="time">2:34</span><span class="label">noodles soaking</span></div>
+          </div>
+        </div>
+        <div class="voice-bar">
+          <div class="voice-strip">
+            <div class="voice-orb"><div class="voice-orb-inner"></div></div>
+            <div class="voice-bars"><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div></div>
+            <span class="voice-status">Listening...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- OPTION C: Spanning the seam between image and content -->
+<div class="mockup-section">
+  <div class="mockup-label">Option C</div>
+  <div class="mockup-title">Bridge Strip</div>
+  <div class="mockup-desc">Ingredients span across the image/content boundary — a thin horizontal strip that bridges both halves. Connects the visual and textual. Like a shelf between two worlds.</div>
+
+  <div class="ipad-frame">
+    <div class="hybrid" style="flex-direction: column;">
+      <!-- Top: image + content side by side -->
+      <div style="flex: 1; display: flex; min-height: 0;">
+        <div style="flex: 0 0 45%; position: relative; overflow: hidden;">
+          <img src="https://images.unsplash.com/photo-1559314809-0d155014e29e?w=1000&q=80" alt="Pad Thai" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; inset: 0; background: linear-gradient(to right, transparent 60%, #0a0a0a 100%);"></div>
+        </div>
+        <div style="flex: 1; background: #0a0a0a; display: flex; flex-direction: column; padding: 24px 36px 12px;">
+          <div class="top-bar">
+            <div class="recipe-name">Pad Thai</div>
+            <div class="step-dots">
+              <div class="step-dot done">&#10003;</div>
+              <div class="step-dot active">2</div>
+              <div class="step-dot upcoming">3</div>
+              <div class="step-dot upcoming">4</div>
+            </div>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <div class="step-number">Step 2</div>
+            <div class="step-text">Heat wok over high heat, add oil, scramble eggs until just set</div>
+            <div class="step-detail">Use a well-seasoned wok. The oil should shimmer and lightly smoke before adding beaten eggs.</div>
+            <div class="timer-row">
+              <div class="timer-chip"><div class="dot"></div><span class="time">2:34</span><span class="label">noodles soaking</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ingredient bridge strip -->
+      <div style="background: rgba(255,255,255,0.03); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 28px; display: flex; align-items: center; gap: 24px;">
+        <div style="font-size: 11px; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; flex-shrink: 0;">You need</div>
+        <div style="display: flex; gap: 16px; overflow-x: auto;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <span style="font-size: 16px;">🥜</span>
+            <span style="font-size: 13px; color: #FF9F0A; font-weight: 500;">2 tbsp</span>
+            <span style="font-size: 13px; color: rgba(255,255,255,0.55);">oil</span>
+          </div>
+          <div style="width: 1px; height: 14px; background: rgba(255,255,255,0.08); flex-shrink: 0;"></div>
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <span style="font-size: 16px;">🥚</span>
+            <span style="font-size: 13px; color: #FF9F0A; font-weight: 500;">2</span>
+            <span style="font-size: 13px; color: rgba(255,255,255,0.55);">eggs, beaten</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice bar -->
+      <div style="padding: 10px 24px 12px; background: #0a0a0a;">
+        <div class="voice-strip">
+          <div class="voice-orb"><div class="voice-orb-inner"></div></div>
+          <div class="voice-bars"><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div></div>
+          <span class="voice-status">Listening...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; padding: 48px; color: rgba(255,255,255,0.2); font-size: 13px;">
+  A (frosted glass on image), B (inline in content), or C (bridge strip)?
+</div>
+
+</body>
+</html>
