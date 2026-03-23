@@ -1,0 +1,117 @@
+<h2>Cooking Mode — iPad Layout</h2>
+<p class="subtitle">Which layout feels right for hands-free, arm's-length cooking? Dark mode shown.</p>
+
+<div class="cards" style="gap: 32px;">
+  <!-- Option A: Cinematic Full-Bleed -->
+  <div class="card" data-choice="cinematic" onclick="toggleSelect(this)" style="background: #0A0A0A; border-color: #222; overflow: hidden;">
+    <div class="card-image" style="padding: 0; background: #0A0A0A;">
+      <div style="width: 100%; aspect-ratio: 4/3; background: #0A0A0A; font-family: -apple-system, system-ui, sans-serif; color: #fff; padding: 0; position: relative; overflow: hidden;">
+        <!-- Step image background -->
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #2a1f0a 0%, #1a0f05 100%); opacity: 0.6;"></div>
+        <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 40%, transparent 70%);"></div>
+
+        <!-- Top bar -->
+        <div style="position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 20px 24px;">
+          <div style="font-size: 13px; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; text-transform: uppercase;">Pad Thai</div>
+          <div style="display: flex; gap: 16px; align-items: center;">
+            <div style="font-size: 12px; color: rgba(255,255,255,0.4);">Step 2 of 4</div>
+            <div style="width: 80px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px;">
+              <div style="width: 50%; height: 100%; background: #FF9F0A; border-radius: 2px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center: Step text (LARGE) -->
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; padding: 0 32px 24px;">
+          <div style="font-size: 32px; font-weight: 600; line-height: 1.3; letter-spacing: -0.5px; margin-bottom: 12px;">
+            Heat wok over high heat, add oil, scramble eggs until just set
+          </div>
+          <div style="font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.5;">
+            Use a well-seasoned wok. The oil should shimmer before adding eggs.
+          </div>
+        </div>
+
+        <!-- Timer pill (top right) -->
+        <div style="position: absolute; top: 56px; right: 24px; z-index: 3; background: rgba(255,159,10,0.15); border: 1px solid rgba(255,159,10,0.3); padding: 8px 16px; border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+          <div style="width: 6px; height: 6px; background: #FF9F0A; border-radius: 50%;"></div>
+          <span style="font-size: 14px; color: #FF9F0A; font-variant-numeric: tabular-nums;">2:34</span>
+          <span style="font-size: 11px; color: rgba(255,159,10,0.6);">noodles soaking</span>
+        </div>
+
+        <!-- Voice indicator (bottom center) -->
+        <div style="position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; gap: 3px; align-items: end;">
+          <div style="width: 3px; height: 12px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+          <div style="width: 3px; height: 20px; background: rgba(255,255,255,0.3); border-radius: 2px;"></div>
+          <div style="width: 3px; height: 28px; background: rgba(255,255,255,0.5); border-radius: 2px;"></div>
+          <div style="width: 3px; height: 16px; background: rgba(255,255,255,0.3); border-radius: 2px;"></div>
+          <div style="width: 3px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" style="background: #0A0A0A; border-top: 1px solid #222;">
+      <h3 style="color: #fff;">A — Cinematic Full-Bleed</h3>
+      <p style="color: #999;">Step image fills the background. Text overlaid at bottom like Apple TV. Minimal chrome. Maximum immersion. Voice waveform floats subtly.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Structured Cards -->
+  <div class="card" data-choice="structured" onclick="toggleSelect(this)" style="background: #0A0A0A; border-color: #222; overflow: hidden;">
+    <div class="card-image" style="padding: 0; background: #0A0A0A;">
+      <div style="width: 100%; aspect-ratio: 4/3; background: #0A0A0A; font-family: -apple-system, system-ui, sans-serif; color: #fff; padding: 24px; display: flex; flex-direction: column;">
+
+        <!-- Top bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div style="font-size: 13px; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; text-transform: uppercase;">Pad Thai</div>
+          <div style="display: flex; gap: 8px;">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.3);">1</div>
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: #FF9F0A; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #000; font-weight: 700;">2</div>
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.3);">3</div>
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.3);">4</div>
+          </div>
+        </div>
+
+        <!-- Main content: split layout -->
+        <div style="flex: 1; display: flex; gap: 20px;">
+          <!-- Left: Step image -->
+          <div style="flex: 1; background: linear-gradient(135deg, #2a1f0a 0%, #1a0f05 100%); border-radius: 16px; position: relative; overflow: hidden;">
+            <div style="position: absolute; bottom: 12px; left: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 8px; font-size: 11px; color: rgba(255,255,255,0.7);">Step illustration</div>
+          </div>
+          <!-- Right: Text + timer -->
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 28px; font-weight: 600; line-height: 1.3; letter-spacing: -0.3px; margin-bottom: 16px;">
+              Heat wok over high heat, add oil, scramble eggs until just set
+            </div>
+            <div style="font-size: 14px; color: rgba(255,255,255,0.45); line-height: 1.6; margin-bottom: 24px;">
+              Use a well-seasoned wok. The oil should shimmer before adding eggs.
+            </div>
+            <!-- Timer -->
+            <div style="background: rgba(255,159,10,0.08); border: 1px solid rgba(255,159,10,0.2); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; width: fit-content;">
+              <div style="width: 8px; height: 8px; background: #FF9F0A; border-radius: 50;"></div>
+              <span style="font-size: 20px; color: #FF9F0A; font-weight: 500; font-variant-numeric: tabular-nums;">2:34</span>
+              <span style="font-size: 12px; color: rgba(255,159,10,0.5);">noodles soaking</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom: voice bar -->
+        <div style="margin-top: 16px; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #30D158;"></div>
+          </div>
+          <div style="display: flex; gap: 2px; align-items: end;">
+            <div style="width: 2px; height: 8px; background: rgba(255,255,255,0.15); border-radius: 1px;"></div>
+            <div style="width: 2px; height: 14px; background: rgba(255,255,255,0.25); border-radius: 1px;"></div>
+            <div style="width: 2px; height: 20px; background: rgba(255,255,255,0.4); border-radius: 1px;"></div>
+            <div style="width: 2px; height: 12px; background: rgba(255,255,255,0.25); border-radius: 1px;"></div>
+            <div style="width: 2px; height: 6px; background: rgba(255,255,255,0.15); border-radius: 1px;"></div>
+          </div>
+          <span style="font-size: 12px; color: rgba(255,255,255,0.3);">Listening...</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" style="background: #0A0A0A; border-top: 1px solid #222;">
+      <h3 style="color: #fff;">B — Structured Split</h3>
+      <p style="color: #999;">Image left, step text right. Step dots at top. Dedicated voice bar at bottom. More organized, easier to scan. Feels like Apple Keynote presenter view.</p>
+    </div>
+  </div>
+</div>

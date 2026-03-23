@@ -46,7 +46,7 @@ class CookingModeController extends ChangeNotifier {
   // State
   // ─────────────────────────────────────────────────────────────────────────────
 
-  bool _hasPermission = false;
+  bool _hasPermission = kIsWeb; // Browser handles mic permission natively
   bool _isLoadingSession = true;
   String? _sessionError;
   CookingSession? _session;
@@ -284,13 +284,8 @@ class CookingModeController extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────────────────────
 
   Future<void> _checkPermissionsAndStart() async {
-    debugPrint('[CookingModeController] Checking permissions - isWeb: $kIsWeb');
-
     if (kIsWeb) {
-      debugPrint('[CookingModeController] Web platform - auto-granting permission');
-      _hasPermission = true;
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Browser handles mic permission natively when LiveKit requests audio
       _startConversation();
       return;
     }
@@ -300,7 +295,6 @@ class CookingModeController extends ChangeNotifier {
     notifyListeners();
 
     if (status.isGranted) {
-      await Future.delayed(const Duration(milliseconds: 500));
       _startConversation();
     }
   }
