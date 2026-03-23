@@ -61,7 +61,16 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: recipesAsync.when(
-                data: (recipes) => _buildBody(context, recipes),
+                data: (recipes) => RefreshIndicator(
+                  color: AppColors.amber,
+                  backgroundColor: AppColors.darkSurface,
+                  onRefresh: () async {
+                    ref.invalidate(recipesProvider);
+                    // Wait for the new fetch to complete
+                    await ref.read(recipesProvider.future);
+                  },
+                  child: _buildBody(context, recipes),
+                ),
                 loading: () => const Center(
                   child: CircularProgressIndicator(color: AppColors.amber),
                 ),
@@ -203,9 +212,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
       return EmptyState(
         recipes: recipes,
         onImportTap: () => context.push('/import'),
-        onCreateTap: () {
-          // TODO: navigate to create recipe
-        },
+        onCreateTap: () => context.push('/import'),
         onRecipeTap: (r) => context.push('/recipes/${r.id}'),
       );
     }

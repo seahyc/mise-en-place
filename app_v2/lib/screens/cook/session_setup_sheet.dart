@@ -128,6 +128,7 @@ class _SessionSetupSheetState extends ConsumerState<SessionSetupSheet> {
 
           // Add another recipe (placeholder)
           OutlinedButton.icon(
+            key: const ValueKey('session_add_recipe'),
             onPressed: () {
               // TODO: open recipe picker
             },
@@ -182,6 +183,7 @@ class _SessionSetupSheetState extends ConsumerState<SessionSetupSheet> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
+              key: const ValueKey('session_start_cooking'),
               onPressed: _loading ? null : _startCooking,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.amber,

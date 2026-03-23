@@ -34,68 +34,76 @@ class EmptyState extends StatelessWidget {
   }
 
   Widget _buildZeroState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '\u{1F373}',
-              style: TextStyle(fontSize: 64),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Your kitchen awaits',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Import a recipe from TikTok or YouTube,\nor create one from scratch.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.white.withValues(alpha: 0.45),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onImportTap,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '\u{1F373}',
+                    style: TextStyle(fontSize: 64),
                   ),
-                ),
-                child: const Text(
-                  '\u{1F4F1} Import your first recipe',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Your kitchen awaits',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Import a recipe from TikTok or YouTube,\nor create one from scratch.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.white.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onImportTap,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.amber,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        '\u{1F4F1} Import your first recipe',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: onCreateTap,
+                    child: Text(
+                      'or create one from scratch \u2192',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: onCreateTap,
-              child: Text(
-                'or create one from scratch \u2192',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.45),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -103,6 +111,7 @@ class EmptyState extends StatelessWidget {
 
   Widget _buildSparseState(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

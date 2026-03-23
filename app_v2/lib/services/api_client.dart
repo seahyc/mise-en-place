@@ -65,7 +65,7 @@ class ApiClient {
   }
 
   Future<User> getCurrentUser() async {
-    final response = await _dio.get<Map<String, dynamic>>('/auth/me');
+    final response = await _dio.get<Map<String, dynamic>>('/me');
     return User.fromJson(response.data!);
   }
 

@@ -276,7 +276,22 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
                       Container(color: AppColors.darkSurface),
                 )
               else
-                Container(color: AppColors.darkSurface),
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1a1a1a), Color(0xFF0f0f0f)],
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.restaurant,
+                      size: 64,
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                ),
 
               // Gradient overlay: transparent → dark (blends into right panel)
               Container(

@@ -127,7 +127,12 @@ func main() {
 		// User
 		r.Get("/me", func(w http.ResponseWriter, r *http.Request) {
 			userID := handler.GetUserID(r.Context())
-			handler.WriteJSON(w, http.StatusOK, map[string]string{"user_id": string(userID)})
+			user, err := userRepo.GetByID(r.Context(), userID)
+			if err != nil || user == nil {
+				handler.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "user not found"})
+				return
+			}
+			handler.WriteJSON(w, http.StatusOK, user)
 		})
 
 		// Recipes

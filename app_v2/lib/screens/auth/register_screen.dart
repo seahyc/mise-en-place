@@ -89,6 +89,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                   // Display name field
                   TextField(
+                    key: const ValueKey('display_name'),
                     controller: _displayNameController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
@@ -99,6 +100,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                   // Email field
                   TextField(
+                    key: const ValueKey('email'),
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     autocorrect: false,
@@ -109,6 +111,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                   // Password field
                   TextField(
+                    key: const ValueKey('password'),
                     controller: _passwordController,
                     obscureText: true,
                     textInputAction: TextInputAction.done,

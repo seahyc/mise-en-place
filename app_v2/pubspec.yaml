@@ -20,6 +20,7 @@ dependencies:
   google_sign_in: ^6.2.0
   flutter_staggered_grid_view: ^0.7.0
   cached_network_image: ^3.3.0
+  marionette_flutter: ^0.4.0
 
 dev_dependencies:
   flutter_test:

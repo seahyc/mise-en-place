@@ -98,11 +98,19 @@ class RecipeDetailScreen extends ConsumerWidget {
                     )
                   else
                     Container(
-                      color: AppColors.darkSurface,
-                      child: const Icon(
-                        Icons.restaurant,
-                        size: 64,
-                        color: AppColors.darkTextTertiary,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF1a1a1a), Color(0xFF0f0f0f)],
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 64,
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
                       ),
                     ),
                   // Gradient overlay

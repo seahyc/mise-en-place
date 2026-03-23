@@ -55,11 +55,19 @@ class RecipeCard extends StatelessWidget {
               AspectRatio(
                 aspectRatio: 4 / 3,
                 child: Container(
-                  color: AppColors.darkSurface,
-                  child: const Icon(
-                    Icons.restaurant,
-                    color: AppColors.darkTextTertiary,
-                    size: 32,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1a1a1a), Color(0xFF0f0f0f)],
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.restaurant,
+                      color: Colors.white.withValues(alpha: 0.08),
+                      size: 32,
+                    ),
                   ),
                 ),
               ),
