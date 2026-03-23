@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/recipe.dart';
 import '../../providers/recipe_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/responsive_layout.dart';
@@ -197,10 +198,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
-  Widget _buildBody(BuildContext context, List recipes) {
+  Widget _buildBody(BuildContext context, List<Recipe> recipes) {
     if (recipes.length < 4) {
       return EmptyState(
-        recipes: recipes.cast(),
+        recipes: recipes,
         onImportTap: () => context.push('/import'),
         onCreateTap: () {
           // TODO: navigate to create recipe

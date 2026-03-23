@@ -377,7 +377,7 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
 
   Widget _buildDismissibleIngredient(int index) {
     return Dismissible(
-      key: ValueKey('ing_$index\_${_ingredientControllers[index].hashCode}'),
+      key: ValueKey('ing_${index}_${_ingredientControllers[index].hashCode}'),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
@@ -424,7 +424,7 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
 
   Widget _buildDismissibleStep(int index) {
     return Dismissible(
-      key: ValueKey('step_$index\_${_stepControllers[index].hashCode}'),
+      key: ValueKey('step_${index}_${_stepControllers[index].hashCode}'),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,

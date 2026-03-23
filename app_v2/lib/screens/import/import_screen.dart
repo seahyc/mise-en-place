@@ -18,7 +18,6 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   final _urlController = TextEditingController();
   String? _detectedPlatform;
   bool _importing = false;
-  String? _jobId;
   final _stepStatuses = <String, bool>{
     'Downloading video': false,
     'Transcribing audio': false,
@@ -55,7 +54,6 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     try {
       final apiClient = ref.read(apiClientProvider);
       final jobId = await apiClient.ingestUrl(url);
-      setState(() => _jobId = jobId);
       _startPolling(jobId);
     } catch (e) {
       if (mounted) {

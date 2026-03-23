@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -54,7 +56,7 @@ class _SessionSetupSheetState extends ConsumerState<SessionSetupSheet> {
       );
       if (mounted) {
         Navigator.pop(context); // close sheet
-        context.push('/cook/${session.id}');
+        if (context.mounted) unawaited(context.push('/cook/${session.id}'));
       }
     } catch (e) {
       if (mounted) {
