@@ -55,9 +55,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/cook/:sessionId',
-        builder: (context, state) => CookingModeScreen(
-          sessionId: state.pathParameters['sessionId']!,
-        ),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CookingModeScreen(
+            sessionId: state.pathParameters['sessionId']!,
+            recipeImageUrl: extra?['recipeImageUrl'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: '/import',

@@ -11,29 +11,34 @@ class VoiceClient {
   bool get isConnected => _channel != null;
 
   Future<void> connect(String sessionId, String token, String baseUrl) async {
-    final wsUrl = baseUrl.replaceFirst('http', 'ws');
-    _channel = WebSocketChannel.connect(Uri.parse('$wsUrl/ws/voice'));
+    try {
+      final wsUrl = baseUrl.replaceFirst('http', 'ws');
+      _channel = WebSocketChannel.connect(Uri.parse('$wsUrl/ws/voice'));
 
-    // Send session_start
-    _channel!.sink.add(jsonEncode({
-      'type': 'session_start',
-      'session_id': sessionId,
-      'token': token,
-    }));
+      // Send session_start
+      _channel!.sink.add(jsonEncode({
+        'type': 'session_start',
+        'session_id': sessionId,
+        'token': token,
+      }));
 
-    _channel!.stream.listen(
-      (data) {
-        if (data is Uint8List) {
-          _events.add(AudioEvent(data));
-        } else if (data is String) {
-          final json = jsonDecode(data) as Map<String, dynamic>;
-          _events.add(parseEvent(json));
-        }
-      },
-      onDone: () => _events.add(DisconnectedEvent()),
-      onError: (Object e) =>
-          _events.add(ErrorEvent('connection', e.toString())),
-    );
+      _channel!.stream.listen(
+        (data) {
+          if (data is Uint8List) {
+            _events.add(AudioEvent(data));
+          } else if (data is String) {
+            final json = jsonDecode(data) as Map<String, dynamic>;
+            _events.add(parseEvent(json));
+          }
+        },
+        onDone: () => _events.add(DisconnectedEvent()),
+        onError: (Object e) =>
+            _events.add(ErrorEvent('connection', e.toString())),
+      );
+    } catch (e) {
+      _channel = null;
+      _events.add(ErrorEvent('connection_failed', e.toString()));
+    }
   }
 
   void sendAudio(Uint8List frame) => _channel?.sink.add(frame);

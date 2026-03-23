@@ -56,7 +56,14 @@ class _SessionSetupSheetState extends ConsumerState<SessionSetupSheet> {
       );
       if (mounted) {
         Navigator.pop(context); // close sheet
-        if (context.mounted) unawaited(context.push('/cook/${session.id}'));
+        if (context.mounted) {
+          unawaited(context.push(
+            '/cook/${session.id}',
+            extra: <String, dynamic>{
+              'recipeImageUrl': _selectedRecipes.first.imageUrl,
+            },
+          ));
+        }
       }
     } catch (e) {
       if (mounted) {

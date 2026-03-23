@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../../models/session.dart';
@@ -21,6 +23,7 @@ class CookingModePhone extends StatefulWidget {
     this.onStepChanged,
     this.onTimerTogglePause,
     this.onTimerCancel,
+    this.onClose,
   });
 
   final CookingSession session;
@@ -32,6 +35,7 @@ class CookingModePhone extends StatefulWidget {
   final ValueChanged<int>? onStepChanged;
   final ValueChanged<int>? onTimerTogglePause;
   final ValueChanged<int>? onTimerCancel;
+  final VoidCallback? onClose;
 
   @override
   State<CookingModePhone> createState() => _CookingModePhoneState();
@@ -90,6 +94,31 @@ class _CookingModePhoneState extends State<CookingModePhone> {
       body: SafeArea(
         child: Column(
           children: [
+            // Close button row
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: widget.onClose,
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                        child: const Icon(Icons.close, color: Colors.white70, size: 18),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             // Collapsible ingredient row
             if (_ingredients.isNotEmpty) _buildIngredientSection(),
 

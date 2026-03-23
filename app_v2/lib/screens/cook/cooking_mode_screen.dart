@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -18,9 +19,14 @@ import 'voice_bar.dart';
 /// The main cooking mode screen. Shows split-pane (image + panel) on iPad,
 /// and delegates to [CookingModePhone] on phone-sized screens.
 class CookingModeScreen extends ConsumerStatefulWidget {
-  const CookingModeScreen({super.key, required this.sessionId});
+  const CookingModeScreen({
+    super.key,
+    required this.sessionId,
+    this.recipeImageUrl,
+  });
 
   final String sessionId;
+  final String? recipeImageUrl;
 
   @override
   ConsumerState<CookingModeScreen> createState() => _CookingModeScreenState();
@@ -84,12 +90,18 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
   }
 
   void _connectVoice() {
-    // TODO: obtain token from secure storage
-    final client = ref.read(voiceClientProvider);
-    final apiClient = ref.read(apiClientProvider);
-    // We use the api client's base URL — extract from dio
-    // For now, connect with placeholder token
-    client.connect(widget.sessionId, '', _baseUrl(apiClient));
+    try {
+      final client = ref.read(voiceClientProvider);
+      final apiClient = ref.read(apiClientProvider);
+      client.connect(widget.sessionId, '', _baseUrl(apiClient));
+    } catch (e) {
+      debugPrint('Voice connection failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Voice unavailable — using manual mode')),
+        );
+      }
+    }
   }
 
   String _baseUrl(dynamic apiClient) {
@@ -205,18 +217,27 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
     if (_error != null || _session == null) {
       return Scaffold(
         backgroundColor: AppColors.darkBackground,
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, color: AppColors.amber, size: 48),
-              const SizedBox(height: 16),
-              Text(
-                _error ?? 'Session not found',
-                style: const TextStyle(color: Colors.white70),
+        body: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: AppColors.amber, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    _error ?? 'Session not found',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 12,
+              left: 16,
+              child: _buildCloseButton(),
+            ),
+          ],
         ),
       );
     }
@@ -233,12 +254,22 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
         onStepChanged: (i) => setState(() => _currentStepIndex = i),
         onTimerTogglePause: _onTimerTogglePause,
         onTimerCancel: _onTimerCancel,
+        onClose: _handleClose,
       );
     }
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
-      body: _buildTabletLayout(),
+      body: Stack(
+        children: [
+          _buildTabletLayout(),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            child: _buildCloseButton(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -357,9 +388,35 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   String? _resolveStepImageUrl(SessionStep? step) {
-    // Steps may not carry image URLs directly in the session model;
-    // this is a placeholder for when recipe step images are available.
-    return null;
+    // Session steps don't carry image URLs; fall back to the recipe's main image.
+    return widget.recipeImageUrl;
+  }
+
+  void _handleClose() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+  }
+
+  Widget _buildCloseButton() {
+    return GestureDetector(
+      onTap: _handleClose,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withValues(alpha: 0.4),
+            ),
+            child: const Icon(Icons.close, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
+    );
   }
 
   List<String> _resolveIngredients(SessionStep? step) {

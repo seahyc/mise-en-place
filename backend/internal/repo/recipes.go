@@ -15,6 +15,7 @@ import (
 type StepInput struct {
 	OrderIndex int
 	Text       string
+	ImageURL   string
 }
 
 // CreateRecipeArgs holds the arguments for creating a new recipe.
@@ -36,6 +37,7 @@ type UpdateRecipeArgs struct {
 	SourceURL   *string
 	SourceType  *string
 	Cuisine     *string
+	ImageURL    *string
 	Ingredients []string
 	Steps       []StepInput
 }
@@ -94,8 +96,8 @@ func (r *PgRecipeRepo) Create(ctx context.Context, args CreateRecipeArgs) (*type
 	recipe.Steps = make([]types.RecipeStep, 0, len(args.Steps))
 	for _, s := range args.Steps {
 		_, err = tx.Exec(ctx,
-			`INSERT INTO recipe_steps (recipe_id, order_index, text) VALUES ($1, $2, $3)`,
-			recipe.ID, s.OrderIndex, s.Text,
+			`INSERT INTO recipe_steps (recipe_id, order_index, text, image_url) VALUES ($1, $2, $3, NULLIF($4, ''))`,
+			recipe.ID, s.OrderIndex, s.Text, s.ImageURL,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("repo: insert step: %w", err)
@@ -103,6 +105,7 @@ func (r *PgRecipeRepo) Create(ctx context.Context, args CreateRecipeArgs) (*type
 		recipe.Steps = append(recipe.Steps, types.RecipeStep{
 			OrderIndex: s.OrderIndex,
 			Text:       s.Text,
+			ImageURL:   s.ImageURL,
 		})
 	}
 
@@ -246,6 +249,11 @@ func (r *PgRecipeRepo) Update(ctx context.Context, id types.RecipeID, args Updat
 		setArgs = append(setArgs, *args.Cuisine)
 		argIdx++
 	}
+	if args.ImageURL != nil {
+		setClauses = append(setClauses, fmt.Sprintf("image_url = NULLIF($%d, '')", argIdx))
+		setArgs = append(setArgs, *args.ImageURL)
+		argIdx++
+	}
 
 	if len(setClauses) > 0 {
 		setClauses = append(setClauses, fmt.Sprintf("updated_at = now()"))
@@ -289,8 +297,8 @@ func (r *PgRecipeRepo) Update(ctx context.Context, id types.RecipeID, args Updat
 		}
 		for _, s := range args.Steps {
 			_, err = tx.Exec(ctx,
-				`INSERT INTO recipe_steps (recipe_id, order_index, text) VALUES ($1, $2, $3)`,
-				id, s.OrderIndex, s.Text,
+				`INSERT INTO recipe_steps (recipe_id, order_index, text, image_url) VALUES ($1, $2, $3, NULLIF($4, ''))`,
+				id, s.OrderIndex, s.Text, s.ImageURL,
 			)
 			if err != nil {
 				return fmt.Errorf("repo: insert step: %w", err)

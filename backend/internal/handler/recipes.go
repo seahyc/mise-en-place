@@ -37,6 +37,7 @@ func (h *RecipeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Steps       []struct {
 			OrderIndex int    `json:"order_index"`
 			Text       string `json:"text"`
+			ImageURL   string `json:"image_url"`
 		} `json:"steps"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -46,7 +47,7 @@ func (h *RecipeHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	steps := make([]repo.StepInput, len(req.Steps))
 	for i, s := range req.Steps {
-		steps[i] = repo.StepInput{OrderIndex: s.OrderIndex, Text: s.Text}
+		steps[i] = repo.StepInput{OrderIndex: s.OrderIndex, Text: s.Text, ImageURL: s.ImageURL}
 	}
 
 	recipe, err := h.svc.Create(r.Context(), repo.CreateRecipeArgs{
@@ -110,10 +111,12 @@ func (h *RecipeHandler) Update(w http.ResponseWriter, r *http.Request) {
 		SourceURL   *string  `json:"source_url"`
 		SourceType  *string  `json:"source_type"`
 		Cuisine     *string  `json:"cuisine"`
+		ImageURL    *string  `json:"image_url"`
 		Ingredients []string `json:"ingredients"`
 		Steps       *[]struct {
 			OrderIndex int    `json:"order_index"`
 			Text       string `json:"text"`
+			ImageURL   string `json:"image_url"`
 		} `json:"steps"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -127,12 +130,13 @@ func (h *RecipeHandler) Update(w http.ResponseWriter, r *http.Request) {
 		SourceURL:   req.SourceURL,
 		SourceType:  req.SourceType,
 		Cuisine:     req.Cuisine,
+		ImageURL:    req.ImageURL,
 		Ingredients: req.Ingredients,
 	}
 	if req.Steps != nil {
 		steps := make([]repo.StepInput, len(*req.Steps))
 		for i, s := range *req.Steps {
-			steps[i] = repo.StepInput{OrderIndex: s.OrderIndex, Text: s.Text}
+			steps[i] = repo.StepInput{OrderIndex: s.OrderIndex, Text: s.Text, ImageURL: s.ImageURL}
 		}
 		args.Steps = steps
 	}
