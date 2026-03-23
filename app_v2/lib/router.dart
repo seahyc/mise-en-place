@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/browse/browse_screen.dart';
+import 'screens/recipe/recipe_detail_screen.dart';
+import 'screens/recipe/recipe_edit_screen.dart';
+import 'screens/import/import_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -34,24 +38,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/recipes',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Recipes')),
-        ),
+        builder: (context, state) => const BrowseScreen(),
       ),
       GoRoute(
         path: '/recipes/:id',
-        builder: (context, state) => Scaffold(
-          body: Center(
-            child: Text('Recipe ${state.pathParameters['id']}'),
-          ),
+        builder: (context, state) => RecipeDetailScreen(
+          recipeId: state.pathParameters['id']!,
         ),
       ),
       GoRoute(
         path: '/recipes/:id/edit',
-        builder: (context, state) => Scaffold(
-          body: Center(
-            child: Text('Edit Recipe ${state.pathParameters['id']}'),
-          ),
+        builder: (context, state) => RecipeEditScreen(
+          recipeId: state.pathParameters['id']!,
         ),
       ),
       GoRoute(
@@ -64,9 +62,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/import',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Import')),
-        ),
+        builder: (context, state) => const ImportScreen(),
       ),
     ],
   );
