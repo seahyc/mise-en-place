@@ -9,7 +9,7 @@ import 'package:mise_en_place/models/job.dart';
 void main() {
   group('Recipe', () {
     test('JSON round-trip', () {
-      final recipe = Recipe(
+      const recipe = Recipe(
         id: 'r1',
         title: 'Pasta Carbonara',
         description: 'Classic Italian pasta',
@@ -17,8 +17,8 @@ void main() {
         cuisine: 'Italian',
         ingredients: ['spaghetti', 'eggs', 'pecorino', 'guanciale'],
         steps: [
-          const RecipeStep(orderIndex: 0, text: 'Boil water'),
-          const RecipeStep(orderIndex: 1, text: 'Cook pasta'),
+          RecipeStep(orderIndex: 0, text: 'Boil water'),
+          RecipeStep(orderIndex: 1, text: 'Cook pasta'),
         ],
       );
 
