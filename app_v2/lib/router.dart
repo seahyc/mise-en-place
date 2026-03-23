@@ -8,6 +8,7 @@ import 'screens/auth/register_screen.dart';
 import 'screens/browse/browse_screen.dart';
 import 'screens/recipe/recipe_detail_screen.dart';
 import 'screens/recipe/recipe_edit_screen.dart';
+import 'screens/cook/cooking_mode_screen.dart';
 import 'screens/import/import_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -54,10 +55,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/cook/:sessionId',
-        builder: (context, state) => Scaffold(
-          body: Center(
-            child: Text('Cooking ${state.pathParameters['sessionId']}'),
-          ),
+        builder: (context, state) => CookingModeScreen(
+          sessionId: state.pathParameters['sessionId']!,
         ),
       ),
       GoRoute(
