@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-const kimiBaseURL = "https://api.moonshot.cn/v1/chat/completions"
+const kimiBaseURL = "https://api.moonshot.ai/v1/chat/completions"
 
 // KimiClient implements Client using the Moonshot (Kimi) API.
 type KimiClient struct {
