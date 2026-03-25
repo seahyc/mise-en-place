@@ -128,6 +128,64 @@ func (p *Pipeline) ProcessUtterance(ctx context.Context, sessionID types.Session
 	return output, nil
 }
 
+// ProcessText runs the pipeline from a text input (skipping STT):
+// 1. Build messages: system prompt + conversation history + user text
+// 2. LLM with tools -> response + tool calls
+// 3. Persist turns
+// 4. TTS: response -> audio chunks
+// 5. Return output
+func (p *Pipeline) ProcessText(ctx context.Context, sessionID types.SessionID, text string, sessionCtx SessionContext) (*PipelineOutput, error) {
+	if strings.TrimSpace(text) == "" {
+		return &PipelineOutput{}, nil
+	}
+
+	// 1. Build messages
+	messages := p.buildMessages(ctx, sessionID, sessionCtx, text)
+
+	// 2. LLM with tools
+	tools := CookingToolDefs()
+	llmResp, err := p.llmClient.ChatWithTools(ctx, messages, tools)
+	if err != nil {
+		return nil, fmt.Errorf("voice: llm failed: %w", err)
+	}
+
+	// 3. Persist turns
+	if p.conversations != nil {
+		if err := p.conversations.AddTurn(ctx, sessionID, "user", text, nil); err != nil {
+			slog.Warn("voice: failed to persist user turn", "error", err)
+		}
+
+		var toolCallsMap map[string]any
+		if len(llmResp.ToolCalls) > 0 {
+			toolCallsMap = make(map[string]any)
+			for _, tc := range llmResp.ToolCalls {
+				toolCallsMap[tc.Name] = tc.Args
+			}
+		}
+		if err := p.conversations.AddTurn(ctx, sessionID, "assistant", llmResp.Content, toolCallsMap); err != nil {
+			slog.Warn("voice: failed to persist assistant turn", "error", err)
+		}
+	}
+
+	// 4. TTS: response -> audio chunks
+	output := &PipelineOutput{
+		Transcript:    text,
+		AgentResponse: llmResp.Content,
+		ToolCalls:     llmResp.ToolCalls,
+	}
+
+	if p.ttsClient != nil && llmResp.Content != "" && p.ttsClient.Healthy(ctx) {
+		audioData, ttsErr := p.ttsClient.Synthesize(ctx, llmResp.Content)
+		if ttsErr != nil {
+			slog.Warn("voice: tts failed, returning text-only", "error", ttsErr)
+		} else if len(audioData) > 0 {
+			output.AudioChunks = [][]byte{audioData}
+		}
+	}
+
+	return output, nil
+}
+
 // buildMessages constructs the LLM message array from system prompt,
 // conversation history, and the new user utterance.
 func (p *Pipeline) buildMessages(ctx context.Context, sessionID types.SessionID, sessionCtx SessionContext, userText string) []llm.Message {

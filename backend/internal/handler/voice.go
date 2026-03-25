@@ -169,6 +169,13 @@ func (h *VoiceHandler) HandleVoice(w http.ResponseWriter, r *http.Request) {
 
 				h.processAndRespond(ctx, conn, sessionID, buf, sessionCtx)
 
+			case "text_input":
+				// User typed a question — skip STT, go directly to LLM → TTS.
+				if h.pipeline == nil {
+					continue
+				}
+				h.processTextAndRespond(ctx, conn, sessionID, msg.Text, sessionCtx)
+
 			case "update_context":
 				sessionCtx.CurrentStep = msg.Step
 				sessionCtx.TotalSteps = msg.TotalSteps
@@ -199,6 +206,51 @@ func (h *VoiceHandler) processAndRespond(ctx context.Context, conn *websocket.Co
 	}
 
 	// Send transcript.
+	if output.Transcript != "" {
+		h.writeJSON(conn, WSMessage{Type: "transcript", Transcript: output.Transcript})
+	}
+
+	// Send tool calls.
+	for _, tc := range output.ToolCalls {
+		h.writeJSON(conn, WSMessage{
+			Type:     "tool_call",
+			ToolName: tc.Name,
+			ToolArgs: tc.Args,
+		})
+	}
+
+	// Send agent response.
+	if output.AgentResponse != "" {
+		h.writeJSON(conn, WSMessage{Type: "agent_response", Text: output.AgentResponse})
+	}
+
+	// Send audio chunks.
+	if len(output.AudioChunks) > 0 {
+		h.writeJSON(conn, WSMessage{Type: "tts_start"})
+		for _, chunk := range output.AudioChunks {
+			if err := conn.WriteMessage(websocket.BinaryMessage, chunk); err != nil {
+				slog.Error("voice: write audio chunk", "error", err)
+				break
+			}
+		}
+		h.writeJSON(conn, WSMessage{Type: "tts_end"})
+	}
+}
+
+// processTextAndRespond runs the text-only pipeline and sends results back over the WebSocket.
+func (h *VoiceHandler) processTextAndRespond(ctx context.Context, conn *websocket.Conn, sessionID types.SessionID, text string, sessionCtx voice.SessionContext) {
+	if text == "" {
+		return
+	}
+
+	output, err := h.pipeline.ProcessText(ctx, sessionID, text, sessionCtx)
+	if err != nil {
+		slog.Error("voice: text pipeline error", "error", err)
+		h.writeError(conn, "pipeline processing failed")
+		return
+	}
+
+	// Send transcript (echo the typed text).
 	if output.Transcript != "" {
 		h.writeJSON(conn, WSMessage{Type: "transcript", Transcript: output.Transcript})
 	}

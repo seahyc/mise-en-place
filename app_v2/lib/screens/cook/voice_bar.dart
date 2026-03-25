@@ -16,10 +16,12 @@ class VoiceBar extends StatefulWidget {
     super.key,
     required this.state,
     this.agentResponseText,
+    this.onTextSubmitted,
   });
 
   final VoiceBarState state;
   final String? agentResponseText;
+  final ValueChanged<String>? onTextSubmitted;
 
   @override
   State<VoiceBar> createState() => _VoiceBarState();
@@ -28,6 +30,9 @@ class VoiceBar extends StatefulWidget {
 class _VoiceBarState extends State<VoiceBar>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  final _textController = TextEditingController();
+  final _focusNode = FocusNode();
+  bool _showTextInput = false;
 
   @override
   void initState() {
@@ -40,8 +45,18 @@ class _VoiceBarState extends State<VoiceBar>
 
   @override
   void dispose() {
+    _textController.dispose();
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _submitText() {
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
+    widget.onTextSubmitted?.call(text);
+    _textController.clear();
+    setState(() => _showTextInput = false);
   }
 
   bool get _isActive =>
@@ -90,30 +105,109 @@ class _VoiceBarState extends State<VoiceBar>
                 : null,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _VoiceOrb(
-                color: _accentColor,
-                isActive: _isActive,
-                controller: _controller,
+              Row(
+                children: [
+                  _VoiceOrb(
+                    color: _accentColor,
+                    isActive: _isActive,
+                    controller: _controller,
+                  ),
+                  const SizedBox(width: 14),
+                  _Waveform(
+                    color: _accentColor,
+                    isActive: _isActive,
+                    controller: _controller,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      _statusText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _isAmber
+                            ? const Color(0x80FF9F0A)
+                            : const Color(0x40FFFFFF),
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  // Keyboard toggle button
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _showTextInput = !_showTextInput);
+                      if (_showTextInput) {
+                        // Delay focus to let the widget build
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          _focusNode.requestFocus();
+                        });
+                      }
+                    },
+                    child: Icon(
+                      _showTextInput ? Icons.keyboard_hide : Icons.keyboard,
+                      color: const Color(0x80FFFFFF),
+                      size: 22,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 14),
-              _Waveform(
-                color: _accentColor,
-                isActive: _isActive,
-                controller: _controller,
-              ),
-              const SizedBox(width: 14),
-              Text(
-                _statusText,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: _isAmber
-                      ? const Color(0x80FF9F0A)
-                      : const Color(0x40FFFFFF),
-                  letterSpacing: 0.3,
+              // Expandable text input
+              if (_showTextInput)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          key: const ValueKey('cooking_text_input'),
+                          controller: _textController,
+                          focusNode: _focusNode,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Ask your sous chef...',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              fontSize: 14,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0x1AFFFFFF),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onSubmitted: (_) => _submitText(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _submitText,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.amber,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_upward,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

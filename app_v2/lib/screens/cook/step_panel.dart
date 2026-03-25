@@ -41,6 +41,7 @@ class StepPanel extends StatelessWidget {
     this.completedStepIndices = const {},
     this.dishNames,
     this.dishColors,
+    this.onTextSubmitted,
   });
 
   final CookingSession session;
@@ -52,6 +53,7 @@ class StepPanel extends StatelessWidget {
   final ValueChanged<int>? onTimerTogglePause;
   final ValueChanged<int>? onTimerCancel;
   final Set<int> completedStepIndices;
+  final ValueChanged<String>? onTextSubmitted;
 
   /// For multi-recipe sessions: dish names keyed by dish tag.
   final Map<String, String>? dishNames;
@@ -301,6 +303,7 @@ class StepPanel extends StatelessWidget {
       child: VoiceBar(
         state: voiceBarState,
         agentResponseText: agentResponseText,
+        onTextSubmitted: onTextSubmitted,
       ),
     );
   }

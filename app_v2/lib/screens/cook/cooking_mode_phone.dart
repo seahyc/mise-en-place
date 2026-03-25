@@ -24,6 +24,7 @@ class CookingModePhone extends StatefulWidget {
     this.onTimerTogglePause,
     this.onTimerCancel,
     this.onClose,
+    this.onTextSubmitted,
   });
 
   final CookingSession session;
@@ -36,6 +37,7 @@ class CookingModePhone extends StatefulWidget {
   final ValueChanged<int>? onTimerTogglePause;
   final ValueChanged<int>? onTimerCancel;
   final VoidCallback? onClose;
+  final ValueChanged<String>? onTextSubmitted;
 
   @override
   State<CookingModePhone> createState() => _CookingModePhoneState();
@@ -134,6 +136,7 @@ class _CookingModePhoneState extends State<CookingModePhone> {
               child: VoiceBar(
                 state: widget.voiceBarState,
                 agentResponseText: widget.agentResponseText,
+                onTextSubmitted: widget.onTextSubmitted,
               ),
             ),
           ],

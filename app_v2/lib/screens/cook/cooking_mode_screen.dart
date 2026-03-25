@@ -203,6 +203,14 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
     }
   }
 
+  void _onTextSubmitted(String text) {
+    final client = ref.read(voiceClientProvider);
+    client.sendTextInput(text);
+    setState(() {
+      _voiceBarState = VoiceBarState.userSpeaking;
+    });
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -255,6 +263,7 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
         onTimerTogglePause: _onTimerTogglePause,
         onTimerCancel: _onTimerCancel,
         onClose: _handleClose,
+        onTextSubmitted: _onTextSubmitted,
       );
     }
 
@@ -379,6 +388,7 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
             onStepTap: _onStepTap,
             onTimerTogglePause: _onTimerTogglePause,
             onTimerCancel: _onTimerCancel,
+            onTextSubmitted: _onTextSubmitted,
           ),
         ),
       ],

@@ -43,6 +43,14 @@ class VoiceClient {
 
   void sendAudio(Uint8List frame) => _channel?.sink.add(frame);
 
+  /// Sends a text input message (typed question) to the backend.
+  void sendTextInput(String text) {
+    _channel?.sink.add(jsonEncode({
+      'type': 'text_input',
+      'text': text,
+    }));
+  }
+
   void disconnect() {
     _channel?.sink.close();
     _channel = null;
