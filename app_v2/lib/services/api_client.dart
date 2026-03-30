@@ -8,7 +8,7 @@ import '../models/user.dart';
 
 class ApiClient {
   ApiClient({
-    String baseUrl = 'http://localhost:8090',
+    String baseUrl = 'https://api.mise.seahyingcong.com',
     FlutterSecureStorage? storage,
   }) : _storage = storage ?? const FlutterSecureStorage() {
     _dio = Dio(BaseOptions(
