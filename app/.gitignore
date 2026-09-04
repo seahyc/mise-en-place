@@ -1,5 +1,7 @@
 .env
 build/
+.venv/
+venv/
 .dart_tool/
 .packages
 .pub/
