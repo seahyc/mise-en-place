@@ -1,3 +1,5 @@
 .DS_Store
 .env
 .claude/worktrees/
+backend/server
+.superpowers/**/.server*
