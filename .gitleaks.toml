@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "CocoaPods dependency SHA-1 checksums"
+condition = "AND"
+paths = ['(^|/)app_v2/ios/Podfile\.lock$']
+regexTarget = "secret"
+regexes = ['^[a-f0-9]{40}$']
